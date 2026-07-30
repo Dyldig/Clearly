@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Figtree', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  @keyframes clearlyPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+</style>
+</helmet>
+<div style="min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;background:oklch(0.94 0.006 65);padding:48px 24px;">
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402,874">
+    <div style="height:100%;display:flex;flex-direction:column;background:oklch(0.97 0.012 70);font-family:'Figtree',system-ui,sans-serif;">
+
+      <!-- ===== HEADER ===== -->
+      <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:58px 20px 14px;display:flex;align-items:center;gap:12px;flex:none;">
+          <div onClick="{{ closeItem }}" style="width:36px;height:36px;border-radius:50%;background:oklch(0.99 0.004 70);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,0.06);cursor:pointer;flex:none;">
+            <svg width="10" height="17" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <div style="font:600 12px/1 'Figtree',sans-serif;letter-spacing:0.04em;text-transform:uppercase;color:{{ selectedItem.chipColor }};background:{{ selectedItem.chipBg }};padding:7px 12px;border-radius:100px;">{{ selectedItem.channel }}</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ !showDetail }}" hint-placeholder-val="{{ true }}">
+
+        <sc-if value="{{ isHomeTab }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:58px 20px 6px;flex:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:22px;height:22px;border-radius:7px;background:oklch(0.62 0.15 35);display:flex;align-items:center;justify-content:center;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:oklch(0.98 0.01 70);"></div>
+                </div>
+                <span style="font:700 16px/1 'Sora',sans-serif;color:oklch(0.24 0.015 60);letter-spacing:-0.01em;">Clearly</span>
+              </div>
+              <span style="font:500 12px/1 'Figtree',sans-serif;color:oklch(0.55 0.015 60);">Thu, 30 Jul</span>
+            </div>
+            <h1 style="margin:0 0 4px;font:600 24px/1.25 'Sora',sans-serif;color:oklch(0.22 0.015 60);letter-spacing:-0.01em;">Good morning, Sarah</h1>
+            <p style="margin:0 0 4px;font:italic 400 13px/1.4 'Figtree',sans-serif;color:oklch(0.55 0.015 60);">Everything that matters. Nothing that doesn't.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDigestTab }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:58px 20px 10px;flex:none;">
+            <span style="font:600 11px/1 'Figtree',sans-serif;letter-spacing:0.06em;text-transform:uppercase;color:oklch(0.62 0.15 35);">Weekly digest</span>
+            <h1 style="margin:6px 0 4px;font:600 22px/1.25 'Sora',sans-serif;color:oklch(0.22 0.015 60);letter-spacing:-0.01em;">Week of 30 Jul – 5 Aug</h1>
+            <p style="margin:0 0 12px;font:400 13px/1.4 'Figtree',sans-serif;color:oklch(0.55 0.015 60);">Organised by day, not by app.</p>
+            <div style="display:flex;gap:4px;overflow-x:auto;background:oklch(0.94 0.006 60);border-radius:100px;padding:4px;">
+              <div onClick="{{ pills.day.click }}" style="flex:none;padding:7px 12px;border-radius:100px;cursor:pointer;background:{{ pills.day.bg }};color:{{ pills.day.color }};font:600 12px/1 'Figtree',sans-serif;white-space:nowrap;">{{ pills.day.label }}</div>
+              <div onClick="{{ pills.week.click }}" style="flex:none;padding:7px 12px;border-radius:100px;cursor:pointer;background:{{ pills.week.bg }};color:{{ pills.week.color }};font:600 12px/1 'Figtree',sans-serif;white-space:nowrap;">{{ pills.week.label }}</div>
+              <div onClick="{{ pills.workweek.click }}" style="flex:none;padding:7px 12px;border-radius:100px;cursor:pointer;background:{{ pills.workweek.bg }};color:{{ pills.workweek.color }};font:600 12px/1 'Figtree',sans-serif;white-space:nowrap;">{{ pills.workweek.label }}</div>
+              <div onClick="{{ pills.month.click }}" style="flex:none;padding:7px 12px;border-radius:100px;cursor:pointer;background:{{ pills.month.bg }};color:{{ pills.month.color }};font:600 12px/1 'Figtree',sans-serif;white-space:nowrap;">{{ pills.month.label }}</div>
+              <div onClick="{{ pills.year.click }}" style="flex:none;padding:7px 12px;border-radius:100px;cursor:pointer;background:{{ pills.year.bg }};color:{{ pills.year.color }};font:600 12px/1 'Figtree',sans-serif;white-space:nowrap;">{{ pills.year.label }}</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isChannelsTab }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:58px 20px 10px;flex:none;">
+            <span style="font:600 11px/1 'Figtree',sans-serif;letter-spacing:0.06em;text-transform:uppercase;color:oklch(0.62 0.15 35);">Channels</span>
+            <h1 style="margin:6px 0 4px;font:600 22px/1.25 'Sora',sans-serif;color:oklch(0.22 0.015 60);letter-spacing:-0.01em;">Connected channels</h1>
+            <p style="margin:0;font:400 13px/1.4 'Figtree',sans-serif;color:oklch(0.55 0.015 60);">Manage how each one reaches you.</p>
+          </div>
+        </sc-if>
+
+      </sc-if>
+
+      <!-- ===== CONTENT ===== -->
+      <div style="flex:1;overflow:auto;padding:2px 20px 24px;">
+
+        <!-- ---- DETAIL SCREEN ---- -->
+        <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="padding-top:6px;">
+            <div style="background:{{ selectedItem.summaryCardBg }};border-radius:20px;padding:18px 18px 16px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                <div style="width:14px;height:14px;border-radius:4px;background:{{ selectedItem.chipColor }};opacity:0.85;"></div>
+                <span style="font:600 10.5px/1 'Figtree',sans-serif;letter-spacing:0.07em;text-transform:uppercase;color:oklch(0.5 0.02 60);">AI summary</span>
+              </div>
+              <p style="margin:0;font:500 16px/1.5 'Sora',sans-serif;color:oklch(0.22 0.015 60);">{{ selectedItem.summary }}</p>
+            </div>
+
+            <sc-if value="{{ selectedItem.actionRequired }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1.5px solid oklch(0.62 0.15 35 / 0.35);background:oklch(0.97 0.02 35);border-radius:18px;padding:16px 18px;margin-bottom:14px;">
+                <div style="font:600 10.5px/1 'Figtree',sans-serif;letter-spacing:0.07em;text-transform:uppercase;color:oklch(0.55 0.15 35);margin-bottom:8px;">Action required</div>
+                <div style="font:700 19px/1.3 'Sora',sans-serif;color:oklch(0.3 0.03 35);margin-bottom:14px;">{{ selectedItem.dateLabel }}</div>
+                <button onClick="{{ toggleCalendar }}" style="width:100%;border:none;border-radius:100px;padding:13px;font:600 14px/1 'Figtree',sans-serif;cursor:pointer;background:{{ selectedItem.calBtnBg }};color:{{ selectedItem.calBtnColor }};display:flex;align-items:center;justify-content:center;gap:8px;">
+                  <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="13.5" rx="2.5" stroke="currentColor" stroke-width="1.6"></rect><path d="M2.5 8H17.5" stroke="currentColor" stroke-width="1.6"></path><path d="M6.5 2V5.5M13.5 2V5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                  {{ selectedItem.calBtnLabel }}
+                </button>
+              </div>
+            </sc-if>
+
+            <div onClick="{{ toggleExpandOriginal }}" style="background:oklch(0.995 0.004 70);border:1px solid oklch(0.9 0.01 60);border-radius:16px;padding:14px 16px;cursor:pointer;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font:600 12px/1 'Figtree',sans-serif;color:oklch(0.45 0.015 60);">Original message</span>
+                <span style="font:400 12px/1 'Figtree',sans-serif;color:oklch(0.55 0.15 35);">{{ selectedItem.expandLabel }}</span>
+              </div>
+              <sc-if value="{{ expandedOriginal }}" hint-placeholder-val="{{ false }}">
+                <p style="margin:10px 0 0;font:400 13.5px/1.6 'Figtree',sans-serif;color:oklch(0.4 0.015 60);white-space:pre-wrap;">{{ selectedItem.original }}</p>
+              </sc-if>
+              <sc-if value="{{ !expandedOriginal }}" hint-placeholder-val="{{ true }}">
+                <p style="margin:8px 0 0;font:400 13px/1.5 'Figtree',sans-serif;color:oklch(0.62 0.01 60);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ selectedItem.original }}</p>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ---- HOME SCREEN ---- -->
+        <sc-if value="{{ showHome }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <sc-if value="{{ showCalendarBanner }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:8px;background:oklch(0.995 0.004 70);border:1px solid oklch(0.92 0.008 60);border-radius:14px;padding:10px 13px;margin:12px 0 4px;">
+                <div style="width:7px;height:7px;border-radius:50%;background:{{ calendarBannerColor }};flex:none;"></div>
+                <span style="font:500 12px/1.4 'Figtree',sans-serif;color:oklch(0.45 0.015 60);">{{ calendarBannerText }}</span>
+              </div>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:8px;margin:14px 0 10px;">
+              <span style="font:600 13px/1 'Figtree',sans-serif;color:oklch(0.4 0.03 35);">Needs your attention</span>
+              <span style="font:600 11px/1 'Figtree',sans-serif;background:oklch(0.62 0.15 35);color:#fff;border-radius:100px;padding:2px 8px;">{{ actionCount }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ homeActionItems }}" as="it" hint-placeholder-count="4">
+                <div onClick="{{ it.open }}" style="background:{{ it.rowBg }};border-radius:16px;padding:14px 15px;cursor:pointer;display:flex;flex-direction:column;gap:6px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:7px;min-width:0;">
+                      <div style="width:6px;height:6px;border-radius:50%;background:oklch(0.62 0.15 35);flex:none;visibility:{{ it.dotVis }};"></div>
+                      <span style="font:600 11px/1 'Figtree',sans-serif;color:{{ it.chipColor }};background:{{ it.chipBg }};padding:4px 9px;border-radius:100px;flex:none;">{{ it.channel }}</span>
+                    </div>
+                    <span style="font:700 12px/1 'Figtree',sans-serif;color:oklch(0.55 0.15 35);flex:none;white-space:nowrap;">{{ it.dateLabel }}</span>
+                  </div>
+                  <div style="font:{{ it.titleWeight }} 15px/1.35 'Sora',sans-serif;color:oklch(0.24 0.015 60);">{{ it.title }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;margin:22px 0 10px;">
+              <span style="font:600 13px/1 'Figtree',sans-serif;color:oklch(0.5 0.015 60);">For your awareness</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ homeFyiItems }}" as="it" hint-placeholder-count="3">
+                <div onClick="{{ it.open }}" style="background:{{ it.rowBg }};border-radius:16px;padding:13px 15px;cursor:pointer;display:flex;flex-direction:column;gap:5px;opacity:{{ it.rowOpacity }};">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:oklch(0.6 0.01 200);flex:none;visibility:{{ it.dotVis }};"></div>
+                    <span style="font:600 10.5px/1 'Figtree',sans-serif;color:{{ it.chipColor }};background:{{ it.chipBg }};padding:3px 8px;border-radius:100px;flex:none;">{{ it.channel }}</span>
+                  </div>
+                  <div style="font:{{ it.titleWeight }} 14px/1.35 'Figtree',sans-serif;color:oklch(0.32 0.015 60);">{{ it.title }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="height:12px;"></div>
+          </div>
+        </sc-if>
+
+        <!-- ---- DIGEST SCREEN: DAY ---- -->
+        <sc-if value="{{ showDigestDay }}" hint-placeholder-val="{{ false }}">
+          <div style="padding-top:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div onClick="{{ dayPrev }}" style="width:32px;height:32px;border-radius:50%;background:oklch(0.995 0.004 70);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:{{ dayPrevDisabled }};">
+                <svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <div style="text-align:center;">
+                <div style="font:700 15px/1 'Sora',sans-serif;color:oklch(0.24 0.015 60);">{{ currentDay.label }}</div>
+                <div style="font:500 12px/1 'Figtree',sans-serif;color:oklch(0.55 0.015 60);margin-top:3px;">{{ currentDay.sub }}</div>
+              </div>
+              <div onClick="{{ dayNext }}" style="width:32px;height:32px;border-radius:50%;background:oklch(0.995 0.004 70);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:{{ dayNextDisabled }};">
+                <svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M2 2l8 8-8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+            </div>
+            <sc-if value="{{ currentDay.hasAction }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;">
+                <sc-for list="{{ currentDay.action }}" as="it" hint-placeholder-count="1">
+                  <div onClick="{{ it.open }}" style="background:oklch(0.97 0.02 35);border:1px solid oklch(0.62 0.15 35 / 0.25);border-radius:14px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                    <div style="min-width:0;">
+                      <div style="font:600 14px/1.3 'Figtree',sans-serif;color:oklch(0.28 0.02 35);">{{ it.title }}</div>
+                      <div style="font:500 11px/1 'Figtree',sans-serif;color:{{ it.chipColor }};margin-top:3px;">{{ it.channel }}</div>
+                    </div>
+                    <span style="font:700 12px/1 'Figtree',sans-serif;color:oklch(0.55 0.15 35);flex:none;">{{ it.dateLabel }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ currentDay.hasFyi }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <sc-for list="{{ currentDay.fyi }}" as="it" hint-placeholder-count="1">
+                  <div onClick="{{ it.open }}" style="background:oklch(0.995 0.004 70);border:1px solid oklch(0.91 0.008 60);border-radius:14px;padding:11px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                    <div style="min-width:0;">
+                      <div style="font:500 14px/1.3 'Figtree',sans-serif;color:oklch(0.4 0.015 60);">{{ it.title }}</div>
+                      <div style="font:500 11px/1 'Figtree',sans-serif;color:oklch(0.6 0.01 60);margin-top:3px;">{{ it.channel }}</div>
+                    </div>
+                    <span style="font:500 10.5px/1 'Figtree',sans-serif;color:oklch(0.6 0.01 60);flex:none;">FYI</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ currentDay.noItems }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center;padding:30px 0;font:500 13px/1.5 'Figtree',sans-serif;color:oklch(0.65 0.01 60);">Nothing on for this day.</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- ---- DIGEST SCREEN: WEEK ---- -->
+        <sc-if value="{{ showDigestWeek }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:18px;padding-top:8px;">
+            <sc-for list="{{ weekDays }}" as="day" hint-placeholder-count="7">
+              <div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
+                  <span style="font:700 14px/1 'Sora',sans-serif;color:oklch(0.24 0.015 60);">{{ day.label }}</span>
+                  <span style="font:500 12px/1 'Figtree',sans-serif;color:oklch(0.58 0.015 60);">{{ day.sub }}</span>
+                </div>
+                <sc-if value="{{ day.hasAction }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px;">
+                    <sc-for list="{{ day.action }}" as="it" hint-placeholder-count="1">
+                      <div onClick="{{ it.open }}" style="background:oklch(0.97 0.02 35);border:1px solid oklch(0.62 0.15 35 / 0.25);border-radius:14px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                        <div style="min-width:0;">
+                          <div style="font:600 13.5px/1.3 'Figtree',sans-serif;color:oklch(0.28 0.02 35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.title }}</div>
+                          <div style="font:500 11px/1 'Figtree',sans-serif;color:{{ it.chipColor }};margin-top:3px;">{{ it.channel }}</div>
+                        </div>
+                        <span style="font:700 12px/1 'Figtree',sans-serif;color:oklch(0.55 0.15 35);flex:none;">{{ it.dateLabel }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ day.hasFyi }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <sc-for list="{{ day.fyi }}" as="it" hint-placeholder-count="1">
+                      <div onClick="{{ it.open }}" style="background:oklch(0.995 0.004 70);border:1px solid oklch(0.91 0.008 60);border-radius:14px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                        <div style="min-width:0;">
+                          <div style="font:500 13px/1.3 'Figtree',sans-serif;color:oklch(0.4 0.015 60);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.title }}</div>
+                          <div style="font:500 11px/1 'Figtree',sans-serif;color:oklch(0.6 0.01 60);margin-top:3px;">{{ it.channel }}</div>
+                        </div>
+                        <span style="font:500 10.5px/1 'Figtree',sans-serif;color:oklch(0.6 0.01 60);flex:none;">FYI</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <div style="height:8px;"></div>
+          </div>
+        </sc-if>
+
+        <!-- ---- DIGEST SCREEN: WORK WEEK ---- -->
+        <sc-if value="{{ showDigestWorkweek }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:18px;padding-top:8px;">
+            <sc-for list="{{ workWeekDays }}" as="day" hint-placeholder-count="5">
+              <div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
+                  <span style="font:700 14px/1 'Sora',sans-serif;color:oklch(0.24 0.015 60);">{{ day.label }}</span>
+                  <span style="font:500 12px/1 'Figtree',sans-serif;color:oklch(0.58 0.015 60);">{{ day.sub }}</span>
+                </div>
+                <sc-if value="{{ day.hasAction }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px;">
+                    <sc-for list="{{ day.action }}" as="it" hint-placeholder-count="1">
+                      <div onClick="{{ it.open }}" style="background:oklch(0.97 0.02 35);border:1px solid oklch(0.62 0.15 35 / 0.25);border-radius:14px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                        <div style="min-width:0;">
+                          <div style="font:600 13.5px/1.3 'Figtree',sans-serif;color:oklch(0.28 0.02 35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.title }}</div>
+                          <div style="font:500 11px/1 'Figtree',sans-serif;color:{{ it.chipColor }};margin-top:3px;">{{ it.channel }}</div>
+                        </div>
+                        <span style="font:700 12px/1 'Figtree',sans-serif;color:oklch(0.55 0.15 35);flex:none;">{{ it.dateLabel }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ day.hasFyi }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <sc-for list="{{ day.fyi }}" as="it" hint-placeholder-count="1">
+                      <div onClick="{{ it.open }}" style="background:oklch(0.995 0.004 70);border:1px solid oklch(0.91 0.008 60);border-radius:14px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                        <div style="min-width:0;">
+                          <div style="font:500 13px/1.3 'Figtree',sans-serif;color:oklch(0.4 0.015 60);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.title }}</div>
+                          <div style="font:500 11px/1 'Figtree',sans-serif;color:oklch(0.6 0.01 60);margin-top:3px;">{{ it.channel }}</div>
+                        </div>
+                        <span style="font:500 10.5px/1 'Figtree',sans-serif;color:oklch(0.6 0.01 60);flex:none;">FYI</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <div style="height:8px;"></div>
+          </div>
+        </sc-if>
+
+        <!-- ---- DIGEST SCREEN: MONTH ---- -->
+        <sc-if value="{{ showDigestMonth }}" hint-placeholder-val="{{ false }}">
+          <div style="padding-top:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div onClick="{{ monthPrev }}" style="width:32px;height:32px;border-radius:50%;background:oklch(0.995 0.004 70);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                <svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <span style="font:700 15px/1 'Sora',sans-serif;color:oklch(0.24 0.015 60);">{{ monthLabel }}</span>
+              <div onClick="{{ monthNext }}" style="width:32px;height:32px;border-radius:50%;background:oklch(0.995 0.004 70);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                <svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M2 2l8 8-8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px 2px;margin-bottom:4px;">
+              <sc-for list="{{ weekdayLetters }}" as="wd" hint-placeholder-count="7">
+                <div style="text-align:center;font:600 10px/1 'Figtree',sans-serif;color:oklch(0.62 0.01 60);padding:4px 0;">{{ wd }}</div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px 2px;">
+              <sc-for list="{{ monthCells }}" as="c" hint-placeholder-count="35">
+                <div onClick="{{ c.onClick }}" style="aspect-ratio:1;border-radius:10px;background:{{ c.cellBg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:{{ c.cursorStyle }};">
+                  <span style="font:500 12.5px/1 'Figtree',sans-serif;color:{{ c.textColor }};">{{ c.num }}</span>
+                  <div style="display:flex;gap:2.5px;height:5px;">
+                    <sc-if value="{{ c.hasAction }}" hint-placeholder-val="{{ false }}"><div style="width:5px;height:5px;border-radius:50%;background:oklch(0.62 0.15 35);"></div></sc-if>
+                    <sc-if value="{{ c.hasFyi }}" hint-placeholder-val="{{ false }}"><div style="width:5px;height:5px;border-radius:50%;background:oklch(0.6 0.01 200);"></div></sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ hasSelectedDay }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
+                <sc-for list="{{ selectedDayItems }}" as="it" hint-placeholder-count="1">
+                  <div onClick="{{ it.open }}" style="background:{{ it.rowBg }};border-radius:14px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                    <div style="min-width:0;">
+                      <div style="font:600 13.5px/1.3 'Figtree',sans-serif;color:oklch(0.28 0.015 60);">{{ it.title }}</div>
+                      <span style="font:600 10.5px/1 'Figtree',sans-serif;color:{{ it.chipColor }};background:{{ it.chipBg }};padding:3px 8px;border-radius:100px;margin-top:5px;display:inline-block;">{{ it.channel }}</span>
+                    </div>
+                    <span style="font:700 12px/1 'Figtree',sans-serif;color:oklch(0.55 0.15 35);flex:none;">{{ it.dateLabel }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="height:8px;"></div>
+          </div>
+        </sc-if>
+
+        <!-- ---- DIGEST SCREEN: YEAR ---- -->
+        <sc-if value="{{ showDigestYear }}" hint-placeholder-val="{{ false }}">
+          <div style="padding-top:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div onClick="{{ yearPrev }}" style="width:32px;height:32px;border-radius:50%;background:oklch(0.995 0.004 70);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                <svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <span style="font:700 16px/1 'Sora',sans-serif;color:oklch(0.24 0.015 60);">{{ yearLabel }}</span>
+              <div onClick="{{ yearNext }}" style="width:32px;height:32px;border-radius:50%;background:oklch(0.995 0.004 70);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                <svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M2 2l8 8-8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+              <sc-for list="{{ yearTiles }}" as="mo" hint-placeholder-count="12">
+                <div onClick="{{ mo.click }}" style="background:oklch(0.995 0.004 70);border-radius:14px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;">
+                  <span style="font:600 13px/1 'Sora',sans-serif;color:oklch(0.3 0.015 60);">{{ mo.name }}</span>
+                  <div style="width:5px;height:5px;border-radius:50%;background:{{ mo.dotColor }};"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="height:8px;"></div>
+          </div>
+        </sc-if>
+
+        <!-- ---- CHANNELS SCREEN ---- -->
+        <sc-if value="{{ showChannels }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;padding-top:8px;">
+            <sc-for list="{{ channelsView }}" as="ch" hint-placeholder-count="6">
+              <div style="background:oklch(0.995 0.004 70);border-radius:18px;padding:14px 15px;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;align-items:center;gap:11px;">
+                  <div style="width:38px;height:38px;border-radius:11px;background:{{ ch.badgeBg }};display:flex;align-items:center;justify-content:center;flex:none;">
+                    <span style="font:700 15px/1 'Sora',sans-serif;color:{{ ch.badgeColor }};">{{ ch.initial }}</span>
+                  </div>
+                  <div style="min-width:0;flex:1;">
+                    <div style="font:600 14.5px/1.2 'Sora',sans-serif;color:oklch(0.24 0.015 60);">{{ ch.name }}</div>
+                    <div style="font:400 12px/1.3 'Figtree',sans-serif;color:oklch(0.55 0.015 60);margin-top:2px;">{{ ch.category }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid oklch(0.93 0.006 60);">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:{{ ch.statusColor }};"></div>
+                    <span style="font:500 11.5px/1 'Figtree',sans-serif;color:oklch(0.5 0.015 60);">{{ ch.statusLabel }} · {{ ch.synced }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div onClick="{{ ch.togglePriority }}" style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ ch.priorityBg }};">
+                      <svg width="15" height="15" viewBox="0 0 20 20" fill="{{ ch.starFill }}"><path d="M10 1.5l2.6 5.5 6 0.8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L1.4 7.8l6-0.8L10 1.5z" stroke="{{ ch.starStroke }}" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+                    </div>
+                    <div onClick="{{ ch.toggleMute }}" style="width:44px;height:26px;border-radius:100px;background:{{ ch.switchBg }};position:relative;cursor:pointer;transition:background 0.15s;">
+                      <div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:3px;left:{{ ch.knobLeft }};box-shadow:0 1px 2px rgba(0,0,0,0.2);transition:left 0.15s;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="border:1.5px dashed oklch(0.75 0.01 60);border-radius:18px;padding:18px;display:flex;align-items:center;justify-content:center;gap:8px;color:oklch(0.5 0.015 60);margin-top:4px;">
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 2.5V17.5M2.5 10H17.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+              <span style="font:600 13.5px/1 'Figtree',sans-serif;">Add new channel</span>
+            </div>
+            <div style="height:12px;"></div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- ===== TAB BAR ===== -->
+      <sc-if value="{{ !showDetail }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:none;display:flex;align-items:center;justify-content:space-around;padding:10px 20px 26px;background:oklch(0.99 0.005 70 / 0.92);border-top:1px solid oklch(0.92 0.008 60);backdrop-filter:blur(10px);">
+          <div onClick="{{ goHome }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4l8 7.5" stroke="{{ tabColors.home }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path><path d="M6 10v9h12v-9" stroke="{{ tabColors.home }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font:600 10.5px/1 'Figtree',sans-serif;color:{{ tabColors.home }};">Home</span>
+          </div>
+          <div onClick="{{ goDigest }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="{{ tabColors.digest }}" stroke-width="1.9"></rect><path d="M3.5 9.5H20.5" stroke="{{ tabColors.digest }}" stroke-width="1.9"></path><path d="M8 3V6.5M16 3V6.5" stroke="{{ tabColors.digest }}" stroke-width="1.9" stroke-linecap="round"></path></svg>
+            <span style="font:600 10.5px/1 'Figtree',sans-serif;color:{{ tabColors.digest }};">Digest</span>
+          </div>
+          <div onClick="{{ goChannels }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2" stroke="{{ tabColors.channels }}" stroke-width="1.9"></rect><rect x="13" y="3.5" width="7.5" height="7.5" rx="2" stroke="{{ tabColors.channels }}" stroke-width="1.9"></rect><rect x="3.5" y="13" width="7.5" height="7.5" rx="2" stroke="{{ tabColors.channels }}" stroke-width="1.9"></rect><rect x="13" y="13" width="7.5" height="7.5" rx="2" stroke="{{ tabColors.channels }}" stroke-width="1.9"></rect></svg>
+            <span style="font:600 10.5px/1 'Figtree',sans-serif;color:{{ tabColors.channels }};">Channels</span>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;calendarProvider&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;google&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;google&quot;,&quot;outlook&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Calendar sync&quot;}}">
+const WEEKMETA = [
+  { label: 'Today', sub: 'Thu 30 Jul' },
+  { label: 'Tomorrow', sub: 'Fri 31 Jul' },
+  { label: 'Saturday', sub: '1 Aug' },
+  { label: 'Sunday', sub: '2 Aug' },
+  { label: 'Monday', sub: '3 Aug' },
+  { label: 'Tuesday', sub: '4 Aug' },
+  { label: 'Wednesday', sub: '5 Aug' },
+];
+
+const ORDER_TO_DATE = [
+  [2026, 6, 30], [2026, 6, 31], [2026, 7, 1], [2026, 7, 2], [2026, 7, 3], [2026, 7, 4], [2026, 7, 5],
+];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+const ITEMS = [
+  { id: 'i5', order: 0, channel: 'Seesaw', hue: 230, title: 'Great reading challenge effort!',
+    summary: "Ollie finished his fourth book this term \u2014 his teacher wanted to share the news with a small classroom shout-out.",
+    original: "Hi families, just a quick note to say Ollie has smashed through 4 books this term as part of our reading challenge! We celebrated with a sticker on the classroom chart today. No action needed \u2014 just wanted to share the good news. Keep up the great reading at home!",
+    dateLabel: null, actionRequired: false, read: true },
+  { id: 'i1', order: 1, channel: 'Seesaw', hue: 230, title: 'Book Week costume needed',
+    summary: "Ollie's class is holding a Book Week parade this Friday \u2014 he needs a costume based on a favourite book character.",
+    original: "Reminder: our Book Week parade is this Friday at 9:15am in the school hall. Children are invited to dress as their favourite book character (home-made costumes encouraged, no need to buy anything new). Please have Ollie in costume when he arrives at school that morning. Parents welcome to watch from the hall balcony.",
+    dateLabel: 'Due Fri', actionRequired: true, read: false },
+  { id: 'i3', order: 2, channel: 'Ryde United FC', hue: 50, title: 'Saturday game moved to 9am',
+    summary: "Mia's game against Gladesville has been brought forward \u2014 kickoff is now 9:00am, arrive by 8:30 for warm-up.",
+    original: "Team, due to a ground clash the U11 Girls fixture against Gladesville has been rescheduled from 11am to 9:00am this Saturday at Elouera Reserve, Field 2. Please arrive by 8:30am for warm-up. Bring both kits in case of a colour clash. See you there!",
+    dateLabel: '9:00am Sat', actionRequired: true, read: true },
+  { id: 'i6', order: 3, channel: 'Fig Tree Families', hue: 180, title: 'Uniform swap this Sunday',
+    summary: "The parent group is running a second-hand uniform swap Sunday morning at the hall \u2014 drop-offs welcome from 9am.",
+    original: "Hi all! Running our term 3 uniform swap this Sunday 10am-12pm at the community hall. Drop off any outgrown uniforms from 9am. Gold coin donation on entry goes to the P&C. Bring a bag to carry home your finds \u2014 great chance to grab winter jumpers before it gets colder!",
+    dateLabel: null, actionRequired: false, read: false },
+  { id: 'i2', order: 4, channel: 'QKR', hue: 145, title: 'Taronga Zoo excursion payment',
+    summary: "Payment of $28.50 is due for Year 2's excursion to Taronga Zoo \u2014 the permission note and payment are both required.",
+    original: "Payment request: Year 2 Excursion \u2014 Taronga Zoo. Amount due: $28.50 per student, covers bus transport and entry. Please complete payment and the accompanying permission note by end of day Monday. Students who have not paid by the deadline will be unable to attend and will remain at school with Year 1.",
+    dateLabel: 'Due Mon', actionRequired: true, read: false },
+  { id: 'i4', order: 5, channel: 'Sydney Kids Medical', hue: 10, title: "Mia's dental check-up reminder",
+    summary: "Mia's six-month dental check-up is coming up \u2014 please confirm or reschedule if the time no longer suits.",
+    original: "This is a reminder that Mia Chen has an upcoming dental check-up scheduled for Tuesday at 4:15pm with Dr. Patel. Please arrive 10 minutes early to complete a brief health update form. If this time no longer suits, call the clinic on (02) 9xxx xxxx or reply to reschedule.",
+    dateLabel: '4:15pm Tue', actionRequired: true, read: false },
+  { id: 'i7', order: 6, channel: 'Horizon Strata', hue: 290, title: 'Pool closed for maintenance',
+    summary: "The building's pool will be closed Wednesday and Thursday for annual filtration maintenance \u2014 no action needed.",
+    original: "Notice to all residents: the swimming pool and surrounding deck will be closed from Wednesday to Thursday this week for scheduled filtration system maintenance. Access will resume Friday morning. We apologise for any inconvenience. Contact building management with any questions.",
+    dateLabel: null, actionRequired: false, read: true },
+];
+
+const CHANNELS = [
+  { id: 'seesaw', name: 'Seesaw', category: 'Fig Tree Primary \u00b7 School', hue: 230, status: 'connected', synced: 'Synced 2m ago', muted: false, priority: true },
+  { id: 'qkr', name: 'QKR', category: 'Fig Tree Primary \u00b7 Payments', hue: 145, status: 'connected', synced: 'Synced 1h ago', muted: false, priority: false },
+  { id: 'ryde', name: 'Ryde United FC', category: "Mia \u00b7 Soccer club", hue: 50, status: 'connected', synced: 'Synced 15m ago', muted: false, priority: true },
+  { id: 'medical', name: 'Sydney Kids Medical', category: 'Medical portal', hue: 10, status: 'connected', synced: 'Synced yesterday', muted: false, priority: false },
+  { id: 'strata', name: 'Horizon Strata', category: 'Body corporate', hue: 290, status: 'connected', synced: 'Synced 3d ago', muted: true, priority: false },
+  { id: 'community', name: 'Fig Tree Families', category: 'Community group', hue: 180, status: 'syncing', synced: 'Syncing\u2026', muted: true, priority: false },
+];
+
+class Component extends DCLogic {
+  state = {
+    activeTab: 'home',
+    selectedItemId: null,
+    expandedOriginal: false,
+    items: ITEMS.map(it => ({ ...it })),
+    channels: CHANNELS.map(c => ({ ...c })),
+    digestView: 'week',
+    dayIndex: 0,
+    monthCursor: { y: 2026, m: 7 },
+    yearCursor: 2026,
+    monthSelectedKey: null,
+  };
+
+  openItem = (id) => this.setState(s => ({
+    selectedItemId: id, expandedOriginal: false,
+    items: s.items.map(it => it.id === id ? { ...it, read: true } : it),
+  }));
+  closeItem = () => this.setState({ selectedItemId: null });
+  goHome = () => this.setState({ activeTab: 'home', selectedItemId: null });
+  goDigest = () => this.setState({ activeTab: 'digest', selectedItemId: null });
+  goChannels = () => this.setState({ activeTab: 'channels', selectedItemId: null });
+  toggleExpandOriginal = () => this.setState(s => ({ expandedOriginal: !s.expandedOriginal }));
+  toggleCalendar = () => this.setState(s => ({
+    items: s.items.map(it => it.id === s.selectedItemId ? { ...it, addedToCalendar: !it.addedToCalendar } : it),
+  }));
+  togglePriority = (id) => this.setState(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, priority: !c.priority } : c) }));
+  toggleMute = (id) => this.setState(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, muted: !c.muted } : c) }));
+
+  setDigestView = (v) => this.setState({ digestView: v, monthSelectedKey: null });
+  dayPrev = () => this.setState(s => ({ dayIndex: Math.max(0, s.dayIndex - 1) }));
+  dayNext = () => this.setState(s => ({ dayIndex: Math.min(6, s.dayIndex + 1) }));
+  monthPrev = () => this.setState(s => {
+    const m = s.monthCursor.m - 1;
+    return m < 0 ? { monthCursor: { y: s.monthCursor.y - 1, m: 11 }, monthSelectedKey: null } : { monthCursor: { y: s.monthCursor.y, m }, monthSelectedKey: null };
+  });
+  monthNext = () => this.setState(s => {
+    const m = s.monthCursor.m + 1;
+    return m > 11 ? { monthCursor: { y: s.monthCursor.y + 1, m: 0 }, monthSelectedKey: null } : { monthCursor: { y: s.monthCursor.y, m }, monthSelectedKey: null };
+  });
+  yearPrev = () => this.setState(s => ({ yearCursor: s.yearCursor - 1 }));
+  yearNext = () => this.setState(s => ({ yearCursor: s.yearCursor + 1 }));
+  selectMonthDay = (key) => this.setState(s => ({ monthSelectedKey: s.monthSelectedKey === key ? null : key }));
+  jumpToMonth = (y, m) => this.setState({ digestView: 'month', monthCursor: { y, m }, monthSelectedKey: null });
+
+  chipStyle(hue) {
+    return { chipBg: `oklch(0.93 0.045 ${hue})`, chipColor: `oklch(0.42 0.11 ${hue})` };
+  }
+
+  mapItem(it) {
+    const { chipBg, chipColor } = this.chipStyle(it.hue);
+    return {
+      id: it.id, channel: it.channel, title: it.title, dateLabel: it.dateLabel || '',
+      chipBg, chipColor,
+      rowBg: it.read ? 'oklch(0.995 0.004 70)' : 'oklch(0.955 0.025 35)',
+      rowOpacity: it.read ? 0.72 : 1,
+      dotVis: it.read ? 'hidden' : 'visible',
+      titleWeight: it.read ? 500 : 650,
+      open: () => this.openItem(it.id),
+    };
+  }
+
+  renderVals() {
+    const { items, channels, selectedItemId, expandedOriginal, activeTab } = this.state;
+    const showDetail = !!selectedItemId;
+    const actionItems = items.filter(i => i.actionRequired).sort((a, b) => a.order - b.order);
+    const fyiItems = items.filter(i => !i.actionRequired).sort((a, b) => a.order - b.order);
+
+    const weekDays = WEEKMETA.map((meta, order) => {
+      const dayItems = items.filter(i => i.order === order);
+      return {
+        label: meta.label, sub: meta.sub,
+        action: dayItems.filter(i => i.actionRequired).map(i => this.mapItem(i)),
+        fyi: dayItems.filter(i => !i.actionRequired).map(i => this.mapItem(i)),
+        hasAction: dayItems.some(i => i.actionRequired),
+        hasFyi: dayItems.some(i => !i.actionRequired),
+        noItems: dayItems.length === 0,
+      };
+    });
+
+    const provider = this.props.calendarProvider ?? 'google';
+    const providerMeta = {
+      none: null,
+      google: { label: 'Google Calendar', color: 'oklch(0.55 0.14 145)' },
+      outlook: { label: 'Outlook Calendar', color: 'oklch(0.5 0.14 250)' },
+    }[provider];
+
+    let selectedItem = null;
+    if (showDetail) {
+      const it = items.find(i => i.id === selectedItemId);
+      const { chipBg, chipColor } = this.chipStyle(it.hue);
+      selectedItem = {
+        channel: it.channel, summary: it.summary, original: it.original,
+        dateLabel: it.dateLabel, actionRequired: it.actionRequired,
+        chipBg, chipColor,
+        summaryCardBg: it.actionRequired ? 'oklch(0.965 0.015 35)' : 'oklch(0.97 0.008 200)',
+        calBtnBg: it.addedToCalendar ? 'oklch(0.9 0.03 145)' : 'oklch(0.62 0.15 35)',
+        calBtnColor: it.addedToCalendar ? 'oklch(0.32 0.09 145)' : '#fff',
+        calBtnLabel: it.addedToCalendar
+          ? `Added to ${providerMeta ? providerMeta.label : 'Calendar'} \u2713`
+          : `Add to ${providerMeta ? providerMeta.label : 'Calendar'}`,
+        expandLabel: expandedOriginal ? 'Hide original \u2039' : 'Show original \u203a',
+      };
+    }
+
+    const { digestView, dayIndex, monthCursor, yearCursor, monthSelectedKey } = this.state;
+
+    const viewDef = [
+      { key: 'day', label: 'Day' }, { key: 'week', label: 'Week' }, { key: 'workweek', label: 'Work wk' },
+      { key: 'month', label: 'Month' }, { key: 'year', label: 'Year' },
+    ];
+    const pills = {};
+    viewDef.forEach(v => {
+      const active = digestView === v.key;
+      pills[v.key] = { label: v.label, bg: active ? 'oklch(0.62 0.15 35)' : 'transparent', color: active ? '#fff' : 'oklch(0.45 0.015 60)', click: () => this.setDigestView(v.key) };
+    });
+
+    const currentDay = weekDays[dayIndex];
+    const workWeekDays = weekDays.filter((d, i) => i !== 2 && i !== 3);
+
+    const monthLabel = `${MONTH_NAMES[monthCursor.m]} ${monthCursor.y}`;
+    const first = new Date(monthCursor.y, monthCursor.m, 1);
+    const startWeekday = first.getDay();
+    const daysInMonth = new Date(monthCursor.y, monthCursor.m + 1, 0).getDate();
+    const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+    const monthCells = [];
+    for (let i = 0; i < totalCells; i++) {
+      const cellDate = new Date(monthCursor.y, monthCursor.m, i - startWeekday + 1);
+      const inMonth = cellDate.getMonth() === monthCursor.m;
+      const key = `${cellDate.getFullYear()}-${cellDate.getMonth()}-${cellDate.getDate()}`;
+      const dayItems = items.filter(it => {
+        const d = ORDER_TO_DATE[it.order];
+        return d[0] === cellDate.getFullYear() && d[1] === cellDate.getMonth() && d[2] === cellDate.getDate();
+      });
+      const isToday = key === '2026-6-30';
+      monthCells.push({
+        key, num: cellDate.getDate(), textColor: inMonth ? 'oklch(0.28 0.015 60)' : 'oklch(0.8 0.008 60)',
+        hasAction: dayItems.some(x => x.actionRequired), hasFyi: dayItems.some(x => !x.actionRequired),
+        cellBg: isToday ? 'oklch(0.93 0.045 35)' : (monthSelectedKey === key ? 'oklch(0.95 0.01 60)' : 'transparent'),
+        cursorStyle: dayItems.length > 0 ? 'pointer' : 'default',
+        onClick: dayItems.length > 0 ? () => this.selectMonthDay(key) : undefined,
+      });
+    }
+    const selectedDayItems = monthSelectedKey ? items.filter(it => {
+      const d = ORDER_TO_DATE[it.order];
+      return `${d[0]}-${d[1]}-${d[2]}` === monthSelectedKey;
+    }).map(i => this.mapItem(i)) : [];
+
+    const yearTiles = MONTH_NAMES.map((name, idx) => {
+      const has = items.some(it => { const d = ORDER_TO_DATE[it.order]; return d[0] === yearCursor && d[1] === idx; });
+      return { key: idx, name: name.slice(0, 3), has, dotColor: has ? 'oklch(0.62 0.15 35)' : 'transparent', click: () => this.jumpToMonth(yearCursor, idx) };
+    });
+
+    const showCalendarBanner = !!providerMeta;
+    const calendarBannerText = providerMeta
+      ? `${actionItems.length} upcoming ${actionItems.length === 1 ? 'event' : 'events'} synced with your ${providerMeta.label}`
+      : '';
+    const calendarBannerColor = providerMeta ? providerMeta.color : 'oklch(0.55 0.015 60)';
+
+    const tabColors = {
+      home: activeTab === 'home' && !showDetail ? 'oklch(0.55 0.15 35)' : 'oklch(0.68 0.01 60)',
+      digest: activeTab === 'digest' && !showDetail ? 'oklch(0.55 0.15 35)' : 'oklch(0.68 0.01 60)',
+      channels: activeTab === 'channels' && !showDetail ? 'oklch(0.55 0.15 35)' : 'oklch(0.68 0.01 60)',
+    };
+
+    const channelsView = channels.map(c => {
+      const { chipBg, chipColor } = this.chipStyle(c.hue);
+      return {
+        name: c.name, category: c.category, initial: c.name[0],
+        badgeBg: chipBg, badgeColor: chipColor,
+        statusColor: c.status === 'connected' ? 'oklch(0.65 0.14 145)' : 'oklch(0.72 0.13 80)',
+        statusLabel: c.status === 'connected' ? 'Connected' : 'Syncing',
+        synced: c.synced,
+        priorityBg: c.priority ? 'oklch(0.93 0.045 35)' : 'transparent',
+        starFill: c.priority ? 'oklch(0.62 0.15 35)' : 'none',
+        starStroke: c.priority ? 'oklch(0.62 0.15 35)' : 'oklch(0.65 0.01 60)',
+        togglePriority: () => this.togglePriority(c.id),
+        switchBg: c.muted ? 'oklch(0.85 0.01 60)' : 'oklch(0.62 0.15 35)',
+        knobLeft: c.muted ? '3px' : '21px',
+        toggleMute: () => this.toggleMute(c.id),
+      };
+    });
+
+    const showDigest = activeTab === 'digest' && !showDetail;
+    return {
+      showDetail, isHomeTab: activeTab === 'home', isDigestTab: activeTab === 'digest', isChannelsTab: activeTab === 'channels',
+      showHome: activeTab === 'home' && !showDetail,
+      showDigest,
+      showChannels: activeTab === 'channels' && !showDetail,
+      actionCount: actionItems.length,
+      homeActionItems: actionItems.map(i => this.mapItem(i)),
+      homeFyiItems: fyiItems.map(i => this.mapItem(i)),
+      weekDays, selectedItem, expandedOriginal, tabColors, channelsView,
+      showCalendarBanner, calendarBannerText, calendarBannerColor,
+      digestView, pills,
+      isViewDay: digestView === 'day', isViewWeek: digestView === 'week', isViewWorkweek: digestView === 'workweek',
+      isViewMonth: digestView === 'month', isViewYear: digestView === 'year',
+      showDigestDay: showDigest && digestView === 'day', showDigestWeek: showDigest && digestView === 'week',
+      showDigestWorkweek: showDigest && digestView === 'workweek', showDigestMonth: showDigest && digestView === 'month',
+      showDigestYear: showDigest && digestView === 'year',
+      currentDay, dayIndex, dayPrev: this.dayPrev, dayNext: this.dayNext,
+      dayPrevDisabled: dayIndex === 0 ? 0.35 : 1, dayNextDisabled: dayIndex === 6 ? 0.35 : 1,
+      workWeekDays,
+      monthLabel, monthCells, selectedDayItems, hasSelectedDay: selectedDayItems.length > 0,
+      weekdayLetters: ['S','M','T','W','T','F','S'],
+      monthPrev: this.monthPrev, monthNext: this.monthNext,
+      yearLabel: String(yearCursor), yearTiles, yearPrev: this.yearPrev, yearNext: this.yearNext,
+      goHome: this.goHome, goDigest: this.goDigest, goChannels: this.goChannels,
+      closeItem: this.closeItem, toggleCalendar: this.toggleCalendar, toggleExpandOriginal: this.toggleExpandOriginal,
+    };
+  }
+}
+</script>
+</body>
+</html>
