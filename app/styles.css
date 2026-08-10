@@ -1,5 +1,5 @@
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; overscroll-behavior: none; }
 body {
   font-family: 'Figtree', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -442,3 +442,44 @@ body {
 }
 .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
 .tab-label { font: 600 10.5px/1 'Figtree', sans-serif; }
+
+/* ===== responsive: on an actual phone-width screen, drop the device
+   mockup chrome (fake status bar / dynamic island / home indicator) and
+   let the app fill the real viewport, using the real safe-area insets
+   instead of the hardcoded padding sized for the fake bezel. Wider
+   viewports (desktop/tablet) keep the framed mockup for browser preview. */
+
+@media (max-width: 460px) {
+  .page {
+    min-height: 100dvh;
+    padding: 0;
+    background: var(--screen-bg);
+  }
+
+  .device {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .dynamic-island,
+  .status-bar,
+  .home-indicator {
+    display: none;
+  }
+
+  .header-home,
+  .header-digest,
+  .header-channels {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
+  }
+
+  .header-detail {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  }
+
+  .tabbar {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+}

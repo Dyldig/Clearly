@@ -1,0 +1,12 @@
+{
+  "name": "Clearly — Parent Communication Hub",
+  "short_name": "Clearly",
+  "description": "Everything that matters. Nothing that doesn't.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F7F1E9",
+  "theme_color": "#C96A45",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

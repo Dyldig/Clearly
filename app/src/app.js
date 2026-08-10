@@ -1,4 +1,4 @@
-import { createInitialState, persistCalendarProvider } from './state.js';
+import { createInitialState, persistState } from './state.js';
 import { renderHeader } from './header.js';
 import { renderTabBar } from './tabbar.js';
 import { renderHome } from './screens/home.js';
@@ -14,6 +14,7 @@ const tabbarEl = document.getElementById('tabbar');
 
 function update(patch) {
   Object.assign(state, typeof patch === 'function' ? patch(state) : patch);
+  persistState(state);
   render();
 }
 
@@ -54,10 +55,7 @@ const actions = {
   selectMonthDay: (key) => update(s => ({ monthSelectedKey: s.monthSelectedKey === key ? null : key })),
   jumpToMonth: (y, m) => update({ activeTab: 'digest', digestView: 'month', monthCursor: { y, m }, monthSelectedKey: null }),
 
-  setCalendarProvider: (v) => {
-    persistCalendarProvider(v);
-    update({ calendarProvider: v });
-  },
+  setCalendarProvider: (v) => update({ calendarProvider: v }),
 
   toggleFilters: () => update(s => ({ filtersOpen: !s.filtersOpen })),
   toggleFilterChannel: (channel) => update(s => {
