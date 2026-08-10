@@ -176,6 +176,54 @@ body {
   border-radius: 100px; padding: 2px 8px;
 }
 
+.filter-bar { display: flex; align-items: center; gap: 12px; margin: 14px 0 0; }
+.filter-toggle {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 7px 12px; border-radius: 100px; background: var(--card-bg);
+  border: 1px solid var(--border-soft); color: oklch(0.4 0.015 60);
+  font: 600 12px/1 'Figtree', sans-serif;
+}
+.filter-toggle-open { background: oklch(0.93 0.045 35); border-color: transparent; color: oklch(0.5 0.15 35); }
+.filter-count-badge {
+  font: 700 10.5px/1 'Figtree', sans-serif; background: var(--accent); color: #fff;
+  border-radius: 100px; padding: 2px 6px;
+}
+.filter-clear {
+  font: 600 12px/1 'Figtree', sans-serif; color: var(--accent-text); cursor: pointer;
+}
+
+.filter-panel {
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 16px;
+  padding: 14px 15px; margin-top: 10px;
+}
+.filter-group { display: flex; flex-direction: column; gap: 8px; }
+.filter-group-label {
+  font: 600 10.5px/1 'Figtree', sans-serif; letter-spacing: 0.06em; text-transform: uppercase;
+  color: oklch(0.55 0.015 60);
+}
+.filter-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.filter-channel-chip {
+  border: 1px solid; border-radius: 100px; padding: 6px 11px; cursor: pointer;
+  font: 600 11.5px/1 'Figtree', sans-serif;
+}
+.filter-segmented {
+  display: flex; gap: 4px; overflow-x: auto;
+  background: oklch(0.94 0.006 60); border-radius: 100px; padding: 4px;
+}
+.filter-date-row { display: flex; align-items: center; gap: 8px; }
+.filter-date-input {
+  flex: 1; min-width: 0; border: 1px solid var(--border-soft); border-radius: 10px;
+  padding: 8px 9px; font: 500 12.5px/1 'Figtree', sans-serif; color: oklch(0.3 0.015 60);
+  background: #fff;
+}
+.filter-date-sep { color: oklch(0.6 0.01 60); font: 500 12px/1 'Figtree', sans-serif; flex: none; }
+
+.filter-empty {
+  padding: 16px 0; text-align: center;
+  font: 500 12.5px/1.5 'Figtree', sans-serif; color: oklch(0.62 0.01 60);
+}
+
 .row-list { display: flex; flex-direction: column; gap: 8px; }
 
 .home-row { border-radius: 16px; cursor: pointer; display: flex; flex-direction: column; }

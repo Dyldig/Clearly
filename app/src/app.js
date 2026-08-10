@@ -58,6 +58,17 @@ const actions = {
     persistCalendarProvider(v);
     update({ calendarProvider: v });
   },
+
+  toggleFilters: () => update(s => ({ filtersOpen: !s.filtersOpen })),
+  toggleFilterChannel: (channel) => update(s => {
+    const has = s.filters.channels.includes(channel);
+    const channels = has ? s.filters.channels.filter(c => c !== channel) : [...s.filters.channels, channel];
+    return { filters: { ...s.filters, channels } };
+  }),
+  setFilterAttention: (v) => update(s => ({ filters: { ...s.filters, attention: v } })),
+  setFilterDateFrom: (v) => update(s => ({ filters: { ...s.filters, dateFrom: v } })),
+  setFilterDateTo: (v) => update(s => ({ filters: { ...s.filters, dateTo: v } })),
+  clearFilters: () => update({ filters: { channels: [], attention: 'all', dateFrom: '', dateTo: '' } }),
 };
 
 function render() {

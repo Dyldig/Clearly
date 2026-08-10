@@ -15,6 +15,8 @@ export function createInitialState() {
     yearCursor: 2026,
     monthSelectedKey: null,
     calendarProvider: localStorage.getItem(CALENDAR_PROVIDER_KEY) || 'google',
+    filtersOpen: false,
+    filters: { channels: [], attention: 'all', dateFrom: '', dateTo: '' },
   };
 }
 
