@@ -1,0 +1,5 @@
+{
+  "name": "clearly-backend",
+  "private": true,
+  "engines": { "node": ">=18" }
+}
