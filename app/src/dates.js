@@ -26,3 +26,14 @@ export function sameDate(a, b) {
 export function shortDate(d) {
   return `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`;
 }
+
+// Parses a bare "YYYY-MM-DD" event_date as a local calendar date rather than
+// UTC midnight, which would otherwise shift it a day earlier in negative-UTC
+// timezones.
+export function parseEventDate(dateStr) {
+  return new Date(`${dateStr}T00:00:00`);
+}
+
+export function formatEventDate(dateStr) {
+  return shortDate(parseEventDate(dateStr));
+}

@@ -1,6 +1,6 @@
 import { el, svg } from '../dom.js';
-import { mapItem } from '../selectors.js';
-import { MONTH_NAMES, WEEKDAY_NAMES, WEEKDAY_ABBR, startOfDay, addDays, dateKey, sameDate } from '../dates.js';
+import { allOccurrences, mapOccurrence } from '../selectors.js';
+import { MONTH_NAMES, WEEKDAY_NAMES, WEEKDAY_ABBR, startOfDay, addDays, dateKey, sameDate, parseEventDate } from '../dates.js';
 
 const CHEV_LEFT = `<svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const CHEV_RIGHT = `<svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M2 2l8 8-8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -15,9 +15,18 @@ export function renderDigest(state, actions) {
   }
 }
 
-// Builds a real 7-day window starting today, and buckets real messages into
-// it by comparing each message's actual received date.
+// Digest is organised by event, not by message — a single message can list
+// several unrelated dates (e.g. one Seesaw digest mentioning Book Week, a
+// disco, and an excursion), and each belongs on its own day. Messages with
+// no dated events don't appear here at all; they're still visible on Home.
+function occurrenceDate(occurrence) {
+  return parseEventDate(occurrence.event.date);
+}
+
+// Builds a real 7-day window starting today, and buckets occurrences into it
+// by their actual event date.
 export function computeWeekDays(state, actions) {
+  const occurrences = allOccurrences(state.items);
   const today = startOfDay(new Date());
   const days = [];
   for (let i = 0; i < 7; i++) {
@@ -26,12 +35,12 @@ export function computeWeekDays(state, actions) {
     const sub = i <= 1
       ? `${WEEKDAY_ABBR[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`
       : `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`;
-    const dayItems = state.items.filter(it => sameDate(new Date(it.date), d));
-    const action = dayItems.filter(i => i.actionRequired).map(i => mapItem(i, actions));
-    const fyi = dayItems.filter(i => !i.actionRequired).map(i => mapItem(i, actions));
+    const dayOccurrences = occurrences.filter(o => sameDate(occurrenceDate(o), d));
+    const action = dayOccurrences.filter(o => o.message.actionRequired).map(o => mapOccurrence(o, actions));
+    const fyi = dayOccurrences.filter(o => !o.message.actionRequired).map(o => mapOccurrence(o, actions));
     days.push({
       label, sub, action, fyi,
-      hasAction: action.length > 0, hasFyi: fyi.length > 0, noItems: dayItems.length === 0,
+      hasAction: action.length > 0, hasFyi: fyi.length > 0, noItems: dayOccurrences.length === 0,
     });
   }
   return days;
@@ -94,6 +103,7 @@ function renderListRow(it, kind, size) {
 }
 
 function renderMonth(state, actions) {
+  const occurrences = allOccurrences(state.items);
   const { monthCursor } = state;
   const monthLabel = `${MONTH_NAMES[monthCursor.m]} ${monthCursor.y}`;
   const first = new Date(monthCursor.y, monthCursor.m, 1);
@@ -107,19 +117,19 @@ function renderMonth(state, actions) {
     const cellDate = new Date(monthCursor.y, monthCursor.m, i - startWeekday + 1);
     const inMonth = cellDate.getMonth() === monthCursor.m;
     const key = dateKey(cellDate);
-    const dayItems = state.items.filter(it => sameDate(new Date(it.date), cellDate));
+    const dayOccurrences = occurrences.filter(o => sameDate(occurrenceDate(o), cellDate));
     cells.push({
       key, num: cellDate.getDate(), inMonth,
-      hasAction: dayItems.some(x => x.actionRequired),
-      hasFyi: dayItems.some(x => !x.actionRequired),
+      hasAction: dayOccurrences.some(o => o.message.actionRequired),
+      hasFyi: dayOccurrences.some(o => !o.message.actionRequired),
       isToday: sameDate(cellDate, today),
       selected: state.monthSelectedKey === key,
-      clickable: dayItems.length > 0,
+      clickable: dayOccurrences.length > 0,
     });
   }
 
   const selectedDayItems = state.monthSelectedKey
-    ? state.items.filter(it => dateKey(new Date(it.date)) === state.monthSelectedKey).map(i => mapItem(i, actions))
+    ? occurrences.filter(o => dateKey(occurrenceDate(o)) === state.monthSelectedKey).map(o => mapOccurrence(o, actions))
     : [];
 
   return el('div', { class: 'digest-month' }, [
@@ -166,10 +176,11 @@ function renderMonthSelectedRow(it) {
 }
 
 function renderYear(state, actions) {
+  const occurrences = allOccurrences(state.items);
   const yearCursor = state.yearCursor;
   const tiles = MONTH_NAMES.map((name, idx) => {
-    const has = state.items.some(it => {
-      const d = new Date(it.date);
+    const has = occurrences.some(o => {
+      const d = occurrenceDate(o);
       return d.getFullYear() === yearCursor && d.getMonth() === idx;
     });
     return { name: name.slice(0, 3), has, idx };

@@ -26,3 +26,7 @@ export function fetchMessages() {
 export function updateMessage(id, patch) {
   return apiFetch('/api/messages', { method: 'POST', body: JSON.stringify({ id, ...patch }) });
 }
+
+export function updateEvent(id, patch) {
+  return apiFetch('/api/events', { method: 'POST', body: JSON.stringify({ id, ...patch }) });
+}

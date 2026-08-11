@@ -1,5 +1,5 @@
 import { createInitialState, persistState } from './state.js';
-import { fetchMessages, updateMessage } from './api.js';
+import { fetchMessages, updateMessage, updateEvent } from './api.js';
 import { el } from './dom.js';
 import { renderHeader } from './header.js';
 import { renderTabBar } from './tabbar.js';
@@ -34,14 +34,17 @@ const actions = {
   goDigest: () => update({ activeTab: 'digest', selectedItemId: null }),
   goChannels: () => update({ activeTab: 'channels', selectedItemId: null }),
   toggleExpandOriginal: () => update(s => ({ expandedOriginal: !s.expandedOriginal })),
-  toggleCalendar: () => {
-    const current = state.items.find(it => it.id === state.selectedItemId);
-    if (!current) return;
-    const nextValue = !current.addedToCalendar;
+  toggleEventCalendar: (eventId) => {
+    const message = state.items.find(it => it.id === state.selectedItemId);
+    const event = message && message.events.find(e => e.id === eventId);
+    if (!event) return;
+    const nextValue = !event.addedToCalendar;
     update(s => ({
-      items: s.items.map(it => it.id === s.selectedItemId ? { ...it, addedToCalendar: nextValue } : it),
+      items: s.items.map(it => it.id === s.selectedItemId
+        ? { ...it, events: it.events.map(e => e.id === eventId ? { ...e, addedToCalendar: nextValue } : e) }
+        : it),
     }));
-    updateMessage(current.id, { addedToCalendar: nextValue }).catch(err => console.error('[toggleCalendar] sync failed:', err));
+    updateEvent(eventId, { addedToCalendar: nextValue }).catch(err => console.error('[toggleEventCalendar] sync failed:', err));
   },
   togglePriority: (id) => update(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, priority: !c.priority } : c) })),
   toggleMute: (id) => update(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, muted: !c.muted } : c) })),

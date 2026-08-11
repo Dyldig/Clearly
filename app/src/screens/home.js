@@ -1,6 +1,7 @@
 import { el, svg } from '../dom.js';
 import { mapItem } from '../selectors.js';
 import { PROVIDER_META, chipStyle } from '../colors.js';
+import { parseEventDate } from '../dates.js';
 
 const FILTER_ICON = `<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M6 10h8M9 14.5h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;
 
@@ -73,14 +74,22 @@ export function renderHome(state, actions) {
   return el('div', {}, nodes);
 }
 
-function itemDate(it) {
-  return new Date(it.date);
-}
-
+// A message matches a date-range filter if ANY of its events falls in
+// range. Messages with no dated events (pure FYI, nothing to schedule)
+// don't match once a date filter is active — there's no date to compare.
 function matchesFilters(it, filters) {
   if (filters.channels.length > 0 && !filters.channels.includes(it.channel)) return false;
-  if (filters.dateFrom && itemDate(it) < new Date(`${filters.dateFrom}T00:00:00`)) return false;
-  if (filters.dateTo && itemDate(it) > new Date(`${filters.dateTo}T00:00:00`)) return false;
+  if (filters.dateFrom || filters.dateTo) {
+    const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
+    const to = filters.dateTo ? new Date(`${filters.dateTo}T00:00:00`) : null;
+    const hasMatch = (it.events || []).some(ev => {
+      const d = parseEventDate(ev.date);
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      return true;
+    });
+    if (!hasMatch) return false;
+  }
   return true;
 }
 

@@ -4,6 +4,8 @@
 // Directory at `backend/` — Vercel auto-detects files under `api/` as
 // serverless functions, reachable at <deployment-url>/api/inbound.
 
+const { randomUUID } = require('crypto');
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -17,12 +19,22 @@ const EXTRACT_TOOL = {
     properties: {
       title: { type: 'string', description: 'Short title, under 8 words.' },
       summary: { type: 'string', description: 'One or two plain sentences addressed to the parent.' },
-      actionRequired: { type: 'boolean', description: 'True if the parent needs to do something or attend something.' },
-      dateLabel: { type: ['string', 'null'], description: 'Short human label like "Due Fri" or "9:00am Sat", or null if there is no date or deadline.' },
-      eventDate: { type: ['string', 'null'], description: 'If dateLabel refers to a specific date (e.g. "this Friday", "9am Saturday", "by Monday"), the actual calendar date it refers to, as YYYY-MM-DD, resolved relative to the email\'s own date (given below) — NOT relative to today. Null if there is no specific date or deadline.' },
+      actionRequired: { type: 'boolean', description: 'True if the parent needs to do something, attend something, or pay for something.' },
+      events: {
+        type: 'array',
+        description: 'Every distinct date, deadline, or event mentioned — each gets its own entry. A single email can list several unrelated ones (e.g. a Seesaw digest mentioning Book Week, a disco, and an excursion all in one message) — split those into separate entries rather than merging them. Empty array if the message has no specific date anywhere.',
+        items: {
+          type: 'object',
+          properties: {
+            label: { type: 'string', description: 'Short label for this specific event/deadline, e.g. "Book Week costume", "Disco", "Bunnings visit". A few words, not a full sentence.' },
+            date: { type: 'string', description: 'The actual calendar date this refers to, as YYYY-MM-DD, resolved relative to the email\'s own date (given below) — NOT relative to today.' },
+          },
+          required: ['label', 'date'],
+        },
+      },
       senderLabel: { type: 'string', description: 'Best guess at who originally sent this — the school app, club, or organisation name (e.g. "Seesaw", "QKR", a school or club name). If this looks like a forwarded email, read the original sender from the forwarded header block ("From: ...") rather than whoever forwarded it. Short, a few words.' },
     },
-    required: ['title', 'summary', 'actionRequired', 'dateLabel', 'eventDate', 'senderLabel'],
+    required: ['title', 'summary', 'actionRequired', 'events', 'senderLabel'],
   },
 };
 
@@ -45,7 +57,7 @@ module.exports = async (req, res) => {
     const fromEmail = (payload.FromFull && payload.FromFull.Email) || payload.From || '';
     const subject = payload.Subject || '';
     const rawBody = (payload.TextBody || stripHtml(payload.HtmlBody || '')).trim().slice(0, 6000);
-    const messageId = payload.MessageID || null;
+    const providerMessageId = payload.MessageID || null;
     const emailDate = parseEmailDate(payload.Date);
 
     if (!rawBody) {
@@ -56,8 +68,13 @@ module.exports = async (req, res) => {
     const extracted = await extractWithClaude(subject, rawBody, emailDate);
     const channelInfo = await matchChannel(fromEmail, extracted.senderLabel);
 
-    await supabaseInsert({
-      provider_message_id: messageId,
+    // Generated up front (rather than left to the DB default) so we know the
+    // id to attach events to even before the insert response comes back.
+    const messageId = randomUUID();
+
+    const inserted = await supabaseInsertMessage({
+      id: messageId,
+      provider_message_id: providerMessageId,
       channel: channelInfo.channel,
       hue: channelInfo.hue,
       from_email: fromEmail,
@@ -66,10 +83,23 @@ module.exports = async (req, res) => {
       title: extracted.title,
       summary: extracted.summary,
       action_required: extracted.actionRequired,
-      date_label: extracted.dateLabel,
-      event_date: extracted.eventDate || null,
       sender_label: extracted.senderLabel,
     });
+
+    if (inserted.length === 0) {
+      // A duplicate webhook retry (same provider_message_id) — the message
+      // already exists, so don't insert its events a second time either.
+      res.status(200).json({ ok: true, duplicate: true });
+      return;
+    }
+
+    if (Array.isArray(extracted.events) && extracted.events.length > 0) {
+      await supabaseInsertEvents(extracted.events.map(ev => ({
+        message_id: messageId,
+        label: ev.label,
+        event_date: ev.date,
+      })));
+    }
 
     res.status(200).json({ ok: true });
   } catch (err) {
@@ -113,7 +143,7 @@ async function extractWithClaude(subject, body, emailDate) {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 400,
+      max_tokens: 600,
       tools: [EXTRACT_TOOL],
       tool_choice: { type: 'tool', name: 'extract_message' },
       messages: [{
@@ -128,18 +158,38 @@ async function extractWithClaude(subject, body, emailDate) {
   return toolUse.input;
 }
 
-async function supabaseInsert(row) {
+async function supabaseInsertMessage(row) {
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/messages?on_conflict=provider_message_id`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       'content-type': 'application/json',
-      Prefer: 'resolution=ignore-duplicates',
+      // return=representation so we can tell a real insert (row back) apart
+      // from a skipped duplicate (empty array back) — ignore-duplicates
+      // alone doesn't distinguish the two in the response status.
+      Prefer: 'resolution=ignore-duplicates,return=representation',
     },
     body: JSON.stringify(row),
   });
   if (!resp.ok) {
-    throw new Error(`Supabase insert failed: ${resp.status} ${await resp.text()}`);
+    throw new Error(`Supabase message insert failed: ${resp.status} ${await resp.text()}`);
+  }
+  return resp.json();
+}
+
+async function supabaseInsertEvents(rows) {
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/message_events`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      'content-type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify(rows),
+  });
+  if (!resp.ok) {
+    throw new Error(`Supabase events insert failed: ${resp.status} ${await resp.text()}`);
   }
 }
