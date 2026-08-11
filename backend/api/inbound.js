@@ -19,8 +19,9 @@ const EXTRACT_TOOL = {
       summary: { type: 'string', description: 'One or two plain sentences addressed to the parent.' },
       actionRequired: { type: 'boolean', description: 'True if the parent needs to do something or attend something.' },
       dateLabel: { type: ['string', 'null'], description: 'Short human label like "Due Fri" or "9:00am Sat", or null if there is no date or deadline.' },
+      senderLabel: { type: 'string', description: 'Best guess at who originally sent this — the school app, club, or organisation name (e.g. "Seesaw", "QKR", a school or club name). If this looks like a forwarded email, read the original sender from the forwarded header block ("From: ...") rather than whoever forwarded it. Short, a few words.' },
     },
-    required: ['title', 'summary', 'actionRequired', 'dateLabel'],
+    required: ['title', 'summary', 'actionRequired', 'dateLabel', 'senderLabel'],
   },
 };
 
@@ -50,10 +51,8 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const [channelInfo, extracted] = await Promise.all([
-      matchChannel(fromEmail),
-      extractWithClaude(subject, rawBody),
-    ]);
+    const extracted = await extractWithClaude(subject, rawBody);
+    const channelInfo = await matchChannel(fromEmail, extracted.senderLabel);
 
     await supabaseInsert({
       provider_message_id: messageId,
@@ -66,6 +65,7 @@ module.exports = async (req, res) => {
       summary: extracted.summary,
       action_required: extracted.actionRequired,
       date_label: extracted.dateLabel,
+      sender_label: extracted.senderLabel,
     });
 
     res.status(200).json({ ok: true });
@@ -79,8 +79,11 @@ function stripHtml(html) {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 }
 
-async function matchChannel(fromEmail) {
-  const lower = (fromEmail || '').toLowerCase();
+async function matchChannel(fromEmail, senderLabel) {
+  // Manually forwarded (and even auto-forwarded) email rewrites the envelope
+  // From to the forwarder's own address, so the original sender is checked
+  // too — Claude reads it out of the forwarded header block in the body.
+  const haystack = `${fromEmail || ''} ${senderLabel || ''}`.toLowerCase();
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/channel_senders?select=match_pattern,channel,hue`, {
     headers: {
       apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -88,7 +91,7 @@ async function matchChannel(fromEmail) {
     },
   });
   const rows = resp.ok ? await resp.json() : [];
-  const hit = rows.find(r => lower.includes(r.match_pattern.toLowerCase()));
+  const hit = rows.find(r => haystack.includes(r.match_pattern.toLowerCase()));
   return hit ? { channel: hit.channel, hue: hit.hue } : { channel: 'Unknown', hue: 0 };
 }
 

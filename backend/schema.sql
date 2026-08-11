@@ -28,6 +28,7 @@ create table if not exists messages (
   channel text not null,
   hue integer not null default 0,
   from_email text,
+  sender_label text,                   -- Claude's guess at the true original sender, for forwarded mail whose envelope From is the forwarder
   subject text,
   raw_body text,
   title text,
