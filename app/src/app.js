@@ -1,4 +1,6 @@
 import { createInitialState, persistState } from './state.js';
+import { fetchMessages, updateMessage } from './api.js';
+import { el } from './dom.js';
 import { renderHeader } from './header.js';
 import { renderTabBar } from './tabbar.js';
 import { renderHome } from './screens/home.js';
@@ -19,19 +21,28 @@ function update(patch) {
 }
 
 const actions = {
-  openItem: (id) => update(s => ({
-    selectedItemId: id,
-    expandedOriginal: false,
-    items: s.items.map(it => it.id === id ? { ...it, read: true } : it),
-  })),
+  openItem: (id) => {
+    update(s => ({
+      selectedItemId: id,
+      expandedOriginal: false,
+      items: s.items.map(it => it.id === id ? { ...it, read: true } : it),
+    }));
+    updateMessage(id, { read: true }).catch(err => console.error('[openItem] sync failed:', err));
+  },
   closeItem: () => update({ selectedItemId: null }),
   goHome: () => update({ activeTab: 'home', selectedItemId: null }),
   goDigest: () => update({ activeTab: 'digest', selectedItemId: null }),
   goChannels: () => update({ activeTab: 'channels', selectedItemId: null }),
   toggleExpandOriginal: () => update(s => ({ expandedOriginal: !s.expandedOriginal })),
-  toggleCalendar: () => update(s => ({
-    items: s.items.map(it => it.id === s.selectedItemId ? { ...it, addedToCalendar: !it.addedToCalendar } : it),
-  })),
+  toggleCalendar: () => {
+    const current = state.items.find(it => it.id === state.selectedItemId);
+    if (!current) return;
+    const nextValue = !current.addedToCalendar;
+    update(s => ({
+      items: s.items.map(it => it.id === s.selectedItemId ? { ...it, addedToCalendar: nextValue } : it),
+    }));
+    updateMessage(current.id, { addedToCalendar: nextValue }).catch(err => console.error('[toggleCalendar] sync failed:', err));
+  },
   togglePriority: (id) => update(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, priority: !c.priority } : c) })),
   toggleMute: (id) => update(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, muted: !c.muted } : c) })),
 
@@ -79,9 +90,18 @@ function render() {
 
 function renderContentBody() {
   if (state.selectedItemId) return renderDetail(state, actions);
+  if (state.activeTab === 'channels') return renderChannels(state, actions);
+  if (state.itemsLoading) return el('div', { class: 'state-message' }, 'Loading your messages…');
+  if (state.itemsError) return el('div', { class: 'state-message state-message-error' }, `Couldn't load messages: ${state.itemsError}`);
   if (state.activeTab === 'home') return renderHome(state, actions);
-  if (state.activeTab === 'digest') return renderDigest(state, actions);
-  return renderChannels(state, actions);
+  return renderDigest(state, actions);
 }
 
 render();
+
+fetchMessages()
+  .then(items => update({ items, itemsLoading: false }))
+  .catch(err => {
+    console.error('[bootstrap] failed to load messages:', err);
+    update({ itemsLoading: false, itemsError: String(err && err.message || err) });
+  });

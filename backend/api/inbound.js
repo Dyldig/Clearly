@@ -19,9 +19,10 @@ const EXTRACT_TOOL = {
       summary: { type: 'string', description: 'One or two plain sentences addressed to the parent.' },
       actionRequired: { type: 'boolean', description: 'True if the parent needs to do something or attend something.' },
       dateLabel: { type: ['string', 'null'], description: 'Short human label like "Due Fri" or "9:00am Sat", or null if there is no date or deadline.' },
+      eventDate: { type: ['string', 'null'], description: 'If dateLabel refers to a specific date (e.g. "this Friday", "9am Saturday", "by Monday"), the actual calendar date it refers to, as YYYY-MM-DD, resolved relative to the email\'s own date (given below) — NOT relative to today. Null if there is no specific date or deadline.' },
       senderLabel: { type: 'string', description: 'Best guess at who originally sent this — the school app, club, or organisation name (e.g. "Seesaw", "QKR", a school or club name). If this looks like a forwarded email, read the original sender from the forwarded header block ("From: ...") rather than whoever forwarded it. Short, a few words.' },
     },
-    required: ['title', 'summary', 'actionRequired', 'dateLabel', 'senderLabel'],
+    required: ['title', 'summary', 'actionRequired', 'dateLabel', 'eventDate', 'senderLabel'],
   },
 };
 
@@ -45,13 +46,14 @@ module.exports = async (req, res) => {
     const subject = payload.Subject || '';
     const rawBody = (payload.TextBody || stripHtml(payload.HtmlBody || '')).trim().slice(0, 6000);
     const messageId = payload.MessageID || null;
+    const emailDate = parseEmailDate(payload.Date);
 
     if (!rawBody) {
       res.status(200).json({ skipped: 'empty body' });
       return;
     }
 
-    const extracted = await extractWithClaude(subject, rawBody);
+    const extracted = await extractWithClaude(subject, rawBody, emailDate);
     const channelInfo = await matchChannel(fromEmail, extracted.senderLabel);
 
     await supabaseInsert({
@@ -65,6 +67,7 @@ module.exports = async (req, res) => {
       summary: extracted.summary,
       action_required: extracted.actionRequired,
       date_label: extracted.dateLabel,
+      event_date: extracted.eventDate || null,
       sender_label: extracted.senderLabel,
     });
 
@@ -77,6 +80,11 @@ module.exports = async (req, res) => {
 
 function stripHtml(html) {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+}
+
+function parseEmailDate(raw) {
+  const d = raw ? new Date(raw) : new Date();
+  return isNaN(d.getTime()) ? new Date() : d;
 }
 
 async function matchChannel(fromEmail, senderLabel) {
@@ -95,7 +103,7 @@ async function matchChannel(fromEmail, senderLabel) {
   return hit ? { channel: hit.channel, hue: hit.hue } : { channel: 'Unknown', hue: 0 };
 }
 
-async function extractWithClaude(subject, body) {
+async function extractWithClaude(subject, body, emailDate) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -110,7 +118,7 @@ async function extractWithClaude(subject, body) {
       tool_choice: { type: 'tool', name: 'extract_message' },
       messages: [{
         role: 'user',
-        content: `This is a forwarded email a parent received, possibly with forwarding headers or quoted text mixed in — extract only the substance. Subject: ${subject}\n\nBody:\n${body}`,
+        content: `This is a forwarded email a parent received, possibly with forwarding headers or quoted text mixed in — extract only the substance. This email's own date is ${emailDate.toISOString().slice(0, 10)} — resolve any relative dates in the content ("this Friday", "next week") against that date, not against today.\n\nSubject: ${subject}\n\nBody:\n${body}`,
       }],
     }),
   });

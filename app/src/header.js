@@ -1,5 +1,7 @@
 import { el, svg } from './dom.js';
 import { chipStyle } from './colors.js';
+import { WEEKDAY_ABBR, MONTH_NAMES } from './dates.js';
+import { weekRangeLabel } from './screens/digest.js';
 
 const BACK_ARROW = `<svg width="10" height="17" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -28,13 +30,15 @@ function renderDetailHeader(state, actions) {
 }
 
 function renderHomeHeader() {
+  const now = new Date();
+  const todayLabel = `${WEEKDAY_ABBR[now.getDay()]}, ${now.getDate()} ${MONTH_NAMES[now.getMonth()].slice(0, 3)}`;
   return el('div', { class: 'header header-home' }, [
     el('div', { class: 'brand-row' }, [
       el('div', { class: 'brand-left' }, [
         el('div', { class: 'brand-mark' }, el('div', { class: 'brand-dot' })),
         el('span', { class: 'brand-name' }, 'Clearly'),
       ]),
-      el('span', { class: 'header-date' }, 'Thu, 30 Jul'),
+      el('span', { class: 'header-date' }, todayLabel),
     ]),
     el('h1', { class: 'home-greeting' }, 'Good morning, Sarah'),
     el('p', { class: 'home-tagline' }, "Everything that matters. Nothing that doesn't."),
@@ -44,7 +48,7 @@ function renderHomeHeader() {
 function renderDigestHeader(state, actions) {
   return el('div', { class: 'header header-digest' }, [
     el('span', { class: 'eyebrow' }, 'Weekly digest'),
-    el('h1', { class: 'digest-title' }, 'Week of 30 Jul – 5 Aug'),
+    el('h1', { class: 'digest-title' }, weekRangeLabel()),
     el('p', { class: 'digest-subtitle' }, 'Organised by day, not by app.'),
     el('div', { class: 'view-pills' }, DIGEST_VIEWS.map(v => {
       const active = state.digestView === v.key;

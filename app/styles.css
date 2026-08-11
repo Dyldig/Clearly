@@ -157,6 +157,12 @@ body {
 .spacer-8 { height: 8px; }
 .spacer-12 { height: 12px; }
 
+.state-message {
+  padding: 60px 24px; text-align: center;
+  font: 500 13.5px/1.6 'Figtree', sans-serif; color: oklch(0.55 0.015 60);
+}
+.state-message-error { color: oklch(0.5 0.15 25); }
+
 /* ===== home screen ===== */
 
 .calendar-banner {

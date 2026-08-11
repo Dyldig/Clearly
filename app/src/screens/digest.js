@@ -1,6 +1,6 @@
 import { el, svg } from '../dom.js';
 import { mapItem } from '../selectors.js';
-import { WEEKMETA, ORDER_TO_DATE, MONTH_NAMES } from '../data.js';
+import { MONTH_NAMES, WEEKDAY_NAMES, WEEKDAY_ABBR, startOfDay, addDays, dateKey, sameDate } from '../dates.js';
 
 const CHEV_LEFT = `<svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const CHEV_RIGHT = `<svg width="8" height="14" viewBox="0 0 12 20" fill="none"><path d="M2 2l8 8-8 8" stroke="oklch(0.35 0.02 60)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -15,16 +15,34 @@ export function renderDigest(state, actions) {
   }
 }
 
-function computeWeekDays(state, actions) {
-  return WEEKMETA.map((meta, order) => {
-    const dayItems = state.items.filter(i => i.order === order);
+// Builds a real 7-day window starting today, and buckets real messages into
+// it by comparing each message's actual received date.
+export function computeWeekDays(state, actions) {
+  const today = startOfDay(new Date());
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(today, i);
+    const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : WEEKDAY_NAMES[d.getDay()];
+    const sub = i <= 1
+      ? `${WEEKDAY_ABBR[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`
+      : `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`;
+    const dayItems = state.items.filter(it => sameDate(new Date(it.date), d));
     const action = dayItems.filter(i => i.actionRequired).map(i => mapItem(i, actions));
     const fyi = dayItems.filter(i => !i.actionRequired).map(i => mapItem(i, actions));
-    return {
-      label: meta.label, sub: meta.sub, action, fyi,
+    days.push({
+      label, sub, action, fyi,
       hasAction: action.length > 0, hasFyi: fyi.length > 0, noItems: dayItems.length === 0,
-    };
-  });
+    });
+  }
+  return days;
+}
+
+export function weekRangeLabel() {
+  const today = startOfDay(new Date());
+  const end = addDays(today, 6);
+  const start = `${today.getDate()} ${MONTH_NAMES[today.getMonth()].slice(0, 3)}`;
+  const stop = `${end.getDate()} ${MONTH_NAMES[end.getMonth()].slice(0, 3)}`;
+  return `Week of ${start} – ${stop}`;
 }
 
 function renderDay(state, actions) {
@@ -82,31 +100,26 @@ function renderMonth(state, actions) {
   const startWeekday = first.getDay();
   const daysInMonth = new Date(monthCursor.y, monthCursor.m + 1, 0).getDate();
   const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+  const today = startOfDay(new Date());
 
   const cells = [];
   for (let i = 0; i < totalCells; i++) {
     const cellDate = new Date(monthCursor.y, monthCursor.m, i - startWeekday + 1);
     const inMonth = cellDate.getMonth() === monthCursor.m;
-    const key = `${cellDate.getFullYear()}-${cellDate.getMonth()}-${cellDate.getDate()}`;
-    const dayItems = state.items.filter(it => {
-      const d = ORDER_TO_DATE[it.order];
-      return d[0] === cellDate.getFullYear() && d[1] === cellDate.getMonth() && d[2] === cellDate.getDate();
-    });
+    const key = dateKey(cellDate);
+    const dayItems = state.items.filter(it => sameDate(new Date(it.date), cellDate));
     cells.push({
       key, num: cellDate.getDate(), inMonth,
       hasAction: dayItems.some(x => x.actionRequired),
       hasFyi: dayItems.some(x => !x.actionRequired),
-      isToday: key === '2026-6-30',
+      isToday: sameDate(cellDate, today),
       selected: state.monthSelectedKey === key,
       clickable: dayItems.length > 0,
     });
   }
 
   const selectedDayItems = state.monthSelectedKey
-    ? state.items.filter(it => {
-        const d = ORDER_TO_DATE[it.order];
-        return `${d[0]}-${d[1]}-${d[2]}` === state.monthSelectedKey;
-      }).map(i => mapItem(i, actions))
+    ? state.items.filter(it => dateKey(new Date(it.date)) === state.monthSelectedKey).map(i => mapItem(i, actions))
     : [];
 
   return el('div', { class: 'digest-month' }, [
@@ -155,7 +168,10 @@ function renderMonthSelectedRow(it) {
 function renderYear(state, actions) {
   const yearCursor = state.yearCursor;
   const tiles = MONTH_NAMES.map((name, idx) => {
-    const has = state.items.some(it => { const d = ORDER_TO_DATE[it.order]; return d[0] === yearCursor && d[1] === idx; });
+    const has = state.items.some(it => {
+      const d = new Date(it.date);
+      return d.getFullYear() === yearCursor && d.getMonth() === idx;
+    });
     return { name: name.slice(0, 3), has, idx };
   });
   return el('div', { class: 'digest-year' }, [

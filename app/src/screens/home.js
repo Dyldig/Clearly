@@ -1,7 +1,6 @@
 import { el, svg } from '../dom.js';
 import { mapItem } from '../selectors.js';
 import { PROVIDER_META, chipStyle } from '../colors.js';
-import { ORDER_TO_DATE } from '../data.js';
 
 const FILTER_ICON = `<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M6 10h8M9 14.5h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;
 
@@ -13,8 +12,9 @@ const ATTENTION_OPTIONS = [
 
 export function renderHome(state, actions) {
   const { filters } = state;
-  const allActionItems = state.items.filter(i => i.actionRequired).sort((a, b) => a.order - b.order);
-  const allFyiItems = state.items.filter(i => !i.actionRequired).sort((a, b) => a.order - b.order);
+  // state.items already arrives newest-first from the backend.
+  const allActionItems = state.items.filter(i => i.actionRequired);
+  const allFyiItems = state.items.filter(i => !i.actionRequired);
 
   const showActionSection = filters.attention !== 'fyi';
   const showFyiSection = filters.attention !== 'action';
@@ -28,6 +28,9 @@ export function renderHome(state, actions) {
 
   const providerMeta = PROVIDER_META[state.calendarProvider];
   const activeFilterCount = countActiveFilters(filters);
+  const emptyMessage = state.items.length === 0
+    ? 'No messages yet — forward an email to get started.'
+    : 'Nothing matches these filters.';
 
   const nodes = [];
 
@@ -50,7 +53,7 @@ export function renderHome(state, actions) {
       ]),
       actionItems.length > 0
         ? el('div', { class: 'row-list' }, actionItems.map(it => renderHomeRow(it, 'action')))
-        : el('div', { class: 'filter-empty' }, 'Nothing matches these filters.'),
+        : el('div', { class: 'filter-empty' }, emptyMessage),
     );
   }
 
@@ -61,7 +64,7 @@ export function renderHome(state, actions) {
       ]),
       fyiItems.length > 0
         ? el('div', { class: 'row-list' }, fyiItems.map(it => renderHomeRow(it, 'fyi')))
-        : el('div', { class: 'filter-empty' }, 'Nothing matches these filters.'),
+        : el('div', { class: 'filter-empty' }, emptyMessage),
     );
   }
 
@@ -71,8 +74,7 @@ export function renderHome(state, actions) {
 }
 
 function itemDate(it) {
-  const [y, m, d] = ORDER_TO_DATE[it.order];
-  return new Date(y, m, d);
+  return new Date(it.date);
 }
 
 function matchesFilters(it, filters) {

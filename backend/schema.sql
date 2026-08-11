@@ -35,6 +35,7 @@ create table if not exists messages (
   summary text,
   action_required boolean not null default false,
   date_label text,
+  event_date date,                     -- the real calendar date dateLabel refers to, if any; falls back to created_at for bucketing when null
   read boolean not null default false,
   added_to_calendar boolean not null default false,
   created_at timestamptz not null default now()
