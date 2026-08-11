@@ -30,3 +30,7 @@ export function updateMessage(id, patch) {
 export function updateEvent(id, patch) {
   return apiFetch('/api/events', { method: 'POST', body: JSON.stringify({ id, ...patch }) });
 }
+
+export function deleteMessage(id) {
+  return apiFetch('/api/messages', { method: 'DELETE', body: JSON.stringify({ id }) });
+}

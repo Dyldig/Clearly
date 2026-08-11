@@ -1,14 +1,21 @@
 import { createInitialState, persistState } from './state.js';
-import { fetchMessages, updateMessage, updateEvent } from './api.js';
+import { fetchMessages, updateMessage, updateEvent, deleteMessage } from './api.js';
 import { el } from './dom.js';
+import { showToast } from './toast.js';
+import { attachPullToRefresh } from './pulltorefresh.js';
 import { renderHeader } from './header.js';
 import { renderTabBar } from './tabbar.js';
 import { renderHome } from './screens/home.js';
 import { renderDigest } from './screens/digest.js';
 import { renderChannels } from './screens/channels.js';
+import { renderSettings } from './screens/settings.js';
 import { renderDetail } from './screens/detail.js';
 
 const state = createInitialState();
+
+// Swiped-away messages waiting out their Undo window before the delete is
+// actually sent to the server. Ephemeral, not part of the reactive state.
+const pendingDeletes = new Map();
 
 const headerEl = document.getElementById('header');
 const contentEl = document.getElementById('content');
@@ -18,6 +25,24 @@ function update(patch) {
   Object.assign(state, typeof patch === 'function' ? patch(state) : patch);
   persistState(state);
   render();
+}
+
+// Fetches the latest messages and drops anything already read — pulling to
+// refresh both syncs new mail in and clears out what you've already dealt
+// with, rather than just re-fetching the same list.
+function refreshMessages() {
+  const previousIds = new Set(state.items.map(it => it.id));
+  return fetchMessages()
+    .then(items => {
+      const visible = items.filter(it => !it.read);
+      const newCount = visible.filter(it => !previousIds.has(it.id)).length;
+      update({ items: visible });
+      showToast(newCount > 0 ? `${newCount} new ${newCount === 1 ? 'message' : 'messages'}` : 'No new messages');
+    })
+    .catch(err => {
+      console.error('[refresh] failed:', err);
+      showToast("Couldn't refresh — check your connection");
+    });
 }
 
 const actions = {
@@ -33,6 +58,7 @@ const actions = {
   goHome: () => update({ activeTab: 'home', selectedItemId: null }),
   goDigest: () => update({ activeTab: 'digest', selectedItemId: null }),
   goChannels: () => update({ activeTab: 'channels', selectedItemId: null }),
+  goSettings: () => update({ activeTab: 'settings', selectedItemId: null }),
   toggleExpandOriginal: () => update(s => ({ expandedOriginal: !s.expandedOriginal })),
   toggleEventCalendar: (eventId) => {
     const message = state.items.find(it => it.id === state.selectedItemId);
@@ -45,6 +71,29 @@ const actions = {
         : it),
     }));
     updateEvent(eventId, { addedToCalendar: nextValue }).catch(err => console.error('[toggleEventCalendar] sync failed:', err));
+  },
+  swipeDeleteItem: (id) => {
+    const item = state.items.find(it => it.id === id);
+    if (!item) return;
+    update(s => ({ items: s.items.filter(it => it.id !== id) }));
+
+    const timer = setTimeout(() => {
+      pendingDeletes.delete(id);
+      deleteMessage(id).catch(err => console.error('[delete] sync failed:', err));
+    }, 4500);
+    pendingDeletes.set(id, { item, timer });
+
+    showToast('Message deleted', {
+      actionLabel: 'Undo',
+      duration: 4500,
+      onAction: () => {
+        const pending = pendingDeletes.get(id);
+        if (!pending) return;
+        clearTimeout(pending.timer);
+        pendingDeletes.delete(id);
+        update(s => ({ items: [pending.item, ...s.items] }));
+      },
+    });
   },
   togglePriority: (id) => update(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, priority: !c.priority } : c) })),
   toggleMute: (id) => update(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, muted: !c.muted } : c) })),
@@ -94,6 +143,7 @@ function render() {
 function renderContentBody() {
   if (state.selectedItemId) return renderDetail(state, actions);
   if (state.activeTab === 'channels') return renderChannels(state, actions);
+  if (state.activeTab === 'settings') return renderSettings(state, actions);
   if (state.itemsLoading) return el('div', { class: 'state-message' }, 'Loading your messages…');
   if (state.itemsError) return el('div', { class: 'state-message state-message-error' }, `Couldn't load messages: ${state.itemsError}`);
   if (state.activeTab === 'home') return renderHome(state, actions);
@@ -101,6 +151,7 @@ function renderContentBody() {
 }
 
 render();
+attachPullToRefresh(contentEl, refreshMessages);
 
 fetchMessages()
   .then(items => update({ items, itemsLoading: false }))

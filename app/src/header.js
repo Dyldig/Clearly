@@ -17,6 +17,7 @@ export function renderHeader(state, actions) {
   if (state.selectedItemId) return renderDetailHeader(state, actions);
   if (state.activeTab === 'home') return renderHomeHeader();
   if (state.activeTab === 'digest') return renderDigestHeader(state, actions);
+  if (state.activeTab === 'settings') return renderSettingsHeader();
   return renderChannelsHeader();
 }
 
@@ -66,5 +67,13 @@ function renderChannelsHeader() {
     el('span', { class: 'eyebrow' }, 'Channels'),
     el('h1', { class: 'channels-title' }, 'Connected channels'),
     el('p', { class: 'channels-subtitle' }, 'Manage how each one reaches you.'),
+  ]);
+}
+
+function renderSettingsHeader() {
+  return el('div', { class: 'header header-channels' }, [
+    el('span', { class: 'eyebrow' }, 'Settings'),
+    el('h1', { class: 'channels-title' }, 'App settings'),
+    el('p', { class: 'channels-subtitle' }, 'Calendar, notifications, and your account.'),
   ]);
 }

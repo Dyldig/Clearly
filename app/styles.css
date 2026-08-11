@@ -495,3 +495,60 @@ body {
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
   }
 }
+
+/* ===== toast ===== */
+
+.toast {
+  position: absolute; left: 20px; right: 20px; bottom: 100px; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: oklch(0.22 0.015 60); color: #fff; border-radius: 14px;
+  padding: 12px 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  opacity: 0; transform: translateY(12px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+.toast-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.toast-message { font: 500 13px/1.4 'Figtree', sans-serif; }
+.toast-action {
+  background: none; border: none; color: oklch(0.75 0.13 35); font: 700 13px/1 'Figtree', sans-serif;
+  cursor: pointer; flex: none; padding: 4px;
+}
+
+/* ===== pull to refresh ===== */
+
+.pull-indicator {
+  height: 0; overflow: hidden; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  transition: height 0.2s ease;
+}
+.pull-spinner {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid oklch(0.85 0.02 60); border-top-color: var(--accent);
+  opacity: 0.5; transition: opacity 0.15s ease;
+}
+.pull-ready .pull-spinner { opacity: 1; }
+.pull-spinning .pull-spinner { animation: pull-spin 0.7s linear infinite; opacity: 1; }
+@keyframes pull-spin { to { transform: rotate(360deg); } }
+
+/* ===== swipe to delete ===== */
+
+.home-row-swipe-wrapper { position: relative; border-radius: 16px; overflow: hidden; }
+.swipe-delete-bg {
+  position: absolute; inset: 0; border-radius: 16px;
+  background: oklch(0.55 0.18 25); color: #fff;
+  display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+  padding: 0 18px; font: 600 13px/1 'Figtree', sans-serif;
+}
+.swipeable { position: relative; z-index: 1; will-change: transform; }
+
+/* ===== settings screen ===== */
+
+.settings { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+.settings-badge-neutral { background: oklch(0.93 0.006 60); color: oklch(0.45 0.015 60); }
+.settings-card-disabled { opacity: 0.75; }
+.settings-card-title-row { display: flex; align-items: center; gap: 8px; }
+.coming-soon-badge {
+  font: 600 9.5px/1 'Figtree', sans-serif; letter-spacing: 0.03em; text-transform: uppercase;
+  background: oklch(0.93 0.006 60); color: oklch(0.5 0.015 60);
+  border-radius: 100px; padding: 3px 8px;
+}

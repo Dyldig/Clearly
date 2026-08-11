@@ -1,5 +1,6 @@
-// GET  /api/messages       -> list all messages (with their events), shaped for the frontend
-// POST /api/messages {id, read?} -> patch one message's read state
+// GET    /api/messages       -> list all messages (with their events), shaped for the frontend
+// POST   /api/messages {id, read?} -> patch one message's read state
+// DELETE /api/messages {id}  -> delete one message (cascades to its events)
 const { guard, supabase } = require('./_lib');
 
 module.exports = async (req, res) => {
@@ -28,6 +29,19 @@ module.exports = async (req, res) => {
         body: JSON.stringify({ read }),
       });
       if (!resp.ok) throw new Error(`Supabase update failed: ${resp.status} ${await resp.text()}`);
+      res.status(200).json({ ok: true });
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      const { id } = req.body || {};
+      if (!id) { res.status(400).json({ error: 'id required' }); return; }
+
+      const resp = await supabase(`messages?id=eq.${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { Prefer: 'return=minimal' },
+      });
+      if (!resp.ok) throw new Error(`Supabase delete failed: ${resp.status} ${await resp.text()}`);
       res.status(200).json({ ok: true });
       return;
     }

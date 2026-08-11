@@ -2,8 +2,10 @@ import { el, svg } from '../dom.js';
 import { mapItem } from '../selectors.js';
 import { PROVIDER_META, chipStyle } from '../colors.js';
 import { parseEventDate } from '../dates.js';
+import { makeSwipeable } from '../swipe.js';
 
 const FILTER_ICON = `<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M6 10h8M9 14.5h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;
+const TRASH_ICON = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M7.5 5.5V4a1.5 1.5 0 011.5-1.5h2A1.5 1.5 0 0112.5 4v1.5M8 9v6M12 9v6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 5.5l.7 10a2 2 0 002 1.9h5.6a2 2 0 002-1.9l.7-10" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 const ATTENTION_OPTIONS = [
   { key: 'all', label: 'All' },
@@ -53,7 +55,7 @@ export function renderHome(state, actions) {
         el('span', { class: 'count-badge' }, String(actionItems.length)),
       ]),
       actionItems.length > 0
-        ? el('div', { class: 'row-list' }, actionItems.map(it => renderHomeRow(it, 'action')))
+        ? el('div', { class: 'row-list' }, actionItems.map(it => renderHomeRow(it, 'action', actions)))
         : el('div', { class: 'filter-empty' }, emptyMessage),
     );
   }
@@ -64,7 +66,7 @@ export function renderHome(state, actions) {
         el('span', { class: 'section-label' }, 'For your awareness'),
       ]),
       fyiItems.length > 0
-        ? el('div', { class: 'row-list' }, fyiItems.map(it => renderHomeRow(it, 'fyi')))
+        ? el('div', { class: 'row-list' }, fyiItems.map(it => renderHomeRow(it, 'fyi', actions)))
         : el('div', { class: 'filter-empty' }, emptyMessage),
     );
   }
@@ -173,9 +175,9 @@ function renderChannelFilterChip(opt, filters, actions) {
   }, opt.name);
 }
 
-function renderHomeRow(it, kind) {
+function renderHomeRow(it, kind, actions) {
   const isAction = kind === 'action';
-  return el('div', {
+  const row = el('div', {
     class: `home-row home-row-${kind}`,
     style: { background: it.rowBg, opacity: isAction ? 1 : it.rowOpacity },
     onClick: it.open,
@@ -191,5 +193,10 @@ function renderHomeRow(it, kind) {
       isAction ? el('span', { class: 'home-row-date' }, it.dateLabel) : null,
     ]),
     el('div', { class: `home-row-title home-row-title-${kind}`, style: { fontWeight: it.titleWeight } }, it.title),
+  ]);
+  makeSwipeable(row, () => actions.swipeDeleteItem(it.id));
+  return el('div', { class: 'home-row-swipe-wrapper' }, [
+    el('div', { class: 'swipe-delete-bg' }, [svg(TRASH_ICON), el('span', {}, 'Delete')]),
+    row,
   ]);
 }
