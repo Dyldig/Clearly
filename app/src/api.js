@@ -45,11 +45,11 @@ export function fetchCalendarStatus() {
 }
 
 export function addEventToCalendar(eventId) {
-  return apiFetch('/api/calendar-add-event', { method: 'POST', body: JSON.stringify({ eventId }) });
+  return apiFetch('/api/calendar-event', { method: 'POST', body: JSON.stringify({ eventId }) });
 }
 
 export function removeEventFromCalendar(eventId) {
-  return apiFetch('/api/calendar-remove-event', { method: 'POST', body: JSON.stringify({ eventId }) });
+  return apiFetch('/api/calendar-event', { method: 'DELETE', body: JSON.stringify({ eventId }) });
 }
 
 export function disconnectCalendar() {
@@ -85,9 +85,9 @@ export function saveProfile(displayName) {
 }
 
 export function savePushSubscription({ endpoint, keys, notifyActionOnly }) {
-  return apiFetch('/api/push-subscribe', { method: 'POST', body: JSON.stringify({ endpoint, keys, notifyActionOnly }) });
+  return apiFetch('/api/push-subscription', { method: 'POST', body: JSON.stringify({ endpoint, keys, notifyActionOnly }) });
 }
 
 export function removePushSubscription(endpoint) {
-  return apiFetch('/api/push-unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) });
+  return apiFetch('/api/push-subscription', { method: 'DELETE', body: JSON.stringify({ endpoint }) });
 }
