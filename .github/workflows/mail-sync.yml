@@ -14,5 +14,12 @@ jobs:
     steps:
       - name: Trigger mail sync
         run: |
-          curl -sf -X POST https://clearly-git-main-dylan-6f12.vercel.app/api/mail-sync \
-            -H "Authorization: Bearer ${{ secrets.MAIL_SYNC_SECRET }}"
+          status=$(curl -s -o response.json -w "%{http_code}" -X POST https://clearly-git-main-dylan-6f12.vercel.app/api/mail-sync \
+            -H "Authorization: Bearer ${{ secrets.MAIL_SYNC_SECRET }}")
+          echo "HTTP status: $status"
+          echo "Response body:"
+          cat response.json
+          echo
+          if [ "$status" -ge 400 ]; then
+            exit 1
+          fi
