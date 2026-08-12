@@ -79,3 +79,6 @@ create table if not exists calendar_connections (
   updated_at timestamptz not null default now(),
   unique (user_id, provider)
 );
+
+-- Pausing a sender (without deleting its config) skips it during mail-sync.
+alter table channel_senders add column if not exists muted boolean not null default false;

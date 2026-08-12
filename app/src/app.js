@@ -2,6 +2,7 @@ import { createInitialState, persistState } from './state.js';
 import {
   fetchMessages, updateMessage, deleteMessage,
   fetchCalendarStatus, addEventToCalendar, removeEventFromCalendar, disconnectCalendar as disconnectCalendarApi,
+  fetchChannelSenders, addChannelSender, setChannelSenderMuted, deleteChannelSender as deleteChannelSenderApi,
 } from './api.js';
 import { el } from './dom.js';
 import { showToast } from './toast.js';
@@ -121,8 +122,51 @@ const actions = {
       },
     });
   },
-  togglePriority: (id) => update(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, priority: !c.priority } : c) })),
-  toggleMute: (id) => update(s => ({ channels: s.channels.map(c => c.id === id ? { ...c, muted: !c.muted } : c) })),
+
+  openAddChannelForm: () => update({ addChannelFormOpen: true }),
+  closeAddChannelForm: () => update({ addChannelFormOpen: false }),
+  submitAddChannelForm: () => {
+    const patternInput = document.getElementById('new-sender-pattern');
+    const channelInput = document.getElementById('new-sender-channel');
+    const matchPattern = patternInput ? patternInput.value.trim() : '';
+    const channel = channelInput ? channelInput.value.trim() : '';
+    if (!matchPattern || !channel) {
+      showToast('Enter both a sender and a channel name');
+      return;
+    }
+    addChannelSender(matchPattern, channel)
+      .then(newSender => {
+        update(s => ({ channelSenders: [...s.channelSenders, newSender], addChannelFormOpen: false }));
+        showToast(`Now tracking ${channel}`);
+      })
+      .catch(err => {
+        console.error('[addChannelSender] failed:', err);
+        showToast(err.message || "Couldn't add channel — try again");
+      });
+  },
+  toggleChannelSenderMute: (id) => {
+    const sender = state.channelSenders.find(c => c.id === id);
+    if (!sender) return;
+    const nextMuted = !sender.muted;
+    update(s => ({ channelSenders: s.channelSenders.map(c => c.id === id ? { ...c, muted: nextMuted } : c) }));
+    setChannelSenderMuted(id, nextMuted).catch(err => {
+      console.error('[toggleChannelSenderMute] sync failed:', err);
+      update(s => ({ channelSenders: s.channelSenders.map(c => c.id === id ? { ...c, muted: !nextMuted } : c) }));
+      showToast("Couldn't update — try again");
+    });
+  },
+  deleteChannelSender: (id) => {
+    const sender = state.channelSenders.find(c => c.id === id);
+    if (!sender) return;
+    update(s => ({ channelSenders: s.channelSenders.filter(c => c.id !== id) }));
+    deleteChannelSenderApi(id)
+      .then(() => showToast(`Stopped tracking ${sender.channel}`))
+      .catch(err => {
+        console.error('[deleteChannelSender] failed:', err);
+        update(s => ({ channelSenders: [...s.channelSenders, sender] }));
+        showToast("Couldn't remove — try again");
+      });
+  },
 
   setDigestView: (v) => update({ digestView: v, monthSelectedKey: null }),
   dayPrev: () => update(s => ({ dayIndex: Math.max(0, s.dayIndex - 1) })),
@@ -206,4 +250,11 @@ fetchCalendarStatus()
   .catch(err => {
     console.error('[bootstrap] failed to load calendar status:', err);
     update({ calendarChecking: false });
+  });
+
+fetchChannelSenders()
+  .then(channelSenders => update({ channelSenders, channelSendersLoading: false }))
+  .catch(err => {
+    console.error('[bootstrap] failed to load channel senders:', err);
+    update({ channelSendersLoading: false });
   });

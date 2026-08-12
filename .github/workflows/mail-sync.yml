@@ -1,0 +1,18 @@
+name: Mail sync
+
+on:
+  schedule:
+    # GitHub's minimum granularity is every 5 minutes, and schedules can
+    # drift a little under load — this isn't a hard real-time guarantee,
+    # just "check every so often."
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger mail sync
+        run: |
+          curl -sf -X POST https://clearly-git-main-dylan-6f12.vercel.app/api/mail-sync \
+            -H "Authorization: Bearer ${{ secrets.MAIL_SYNC_SECRET }}"

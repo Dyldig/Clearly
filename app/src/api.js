@@ -15,7 +15,16 @@ async function apiFetch(path, opts = {}) {
       ...(opts.headers || {}),
     },
   });
-  if (!resp.ok) throw new Error(`${path} failed: ${resp.status}`);
+  if (!resp.ok) {
+    let message = `${path} failed: ${resp.status}`;
+    try {
+      const body = await resp.json();
+      if (body && body.error) message = body.error;
+    } catch {
+      // response wasn't JSON — keep the generic message
+    }
+    throw new Error(message);
+  }
   return resp.status === 204 ? null : resp.json();
 }
 
@@ -49,4 +58,20 @@ export function disconnectCalendar() {
 
 export function connectCalendarUrl() {
   return `${API_BASE}/api/auth/microsoft/start`;
+}
+
+export function fetchChannelSenders() {
+  return apiFetch('/api/channel-senders');
+}
+
+export function addChannelSender(matchPattern, channel) {
+  return apiFetch('/api/channel-senders', { method: 'POST', body: JSON.stringify({ matchPattern, channel }) });
+}
+
+export function setChannelSenderMuted(id, muted) {
+  return apiFetch('/api/channel-senders', { method: 'POST', body: JSON.stringify({ id, muted }) });
+}
+
+export function deleteChannelSender(id) {
+  return apiFetch('/api/channel-senders', { method: 'DELETE', body: JSON.stringify({ id }) });
 }

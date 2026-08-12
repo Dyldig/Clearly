@@ -218,11 +218,12 @@ body {
   background: oklch(0.94 0.006 60); border-radius: 100px; padding: 4px;
 }
 .filter-date-row { display: flex; align-items: center; gap: 8px; }
-.filter-date-input {
+.filter-date-input, .text-input {
   flex: 1; min-width: 0; border: 1px solid var(--border-soft); border-radius: 10px;
   padding: 8px 9px; font: 500 12.5px/1 'Figtree', sans-serif; color: oklch(0.3 0.015 60);
   background: #fff;
 }
+.text-input { width: 100%; }
 .filter-date-sep { color: oklch(0.6 0.01 60); font: 500 12px/1 'Figtree', sans-serif; flex: none; }
 
 .filter-empty {
@@ -372,10 +373,11 @@ body {
 .status-dot { width: 6px; height: 6px; border-radius: 50%; }
 .channel-status span { font: 500 11.5px/1 'Figtree', sans-serif; color: oklch(0.5 0.015 60); }
 .channel-controls { display: flex; align-items: center; gap: 8px; }
-
-.priority-btn {
-  width: 30px; height: 30px; border-radius: 50%;
+.channel-mute-status { font: 500 11.5px/1 'Figtree', sans-serif; color: oklch(0.5 0.015 60); }
+.channel-delete-btn {
+  width: 28px; height: 28px; border-radius: 50%; flex: none;
   display: flex; align-items: center; justify-content: center; cursor: pointer;
+  color: oklch(0.6 0.01 60);
 }
 .mute-switch {
   width: 44px; height: 26px; border-radius: 100px; position: relative; cursor: pointer;
@@ -395,6 +397,7 @@ body {
   color: oklch(0.5 0.015 60); margin-top: 4px;
 }
 .add-channel span { font: 600 13.5px/1 'Figtree', sans-serif; }
+.add-channel-form-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
 /* ===== detail screen ===== */
 

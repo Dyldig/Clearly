@@ -9,7 +9,9 @@ const AUTHORIZE_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/auth
 const TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
 // offline_access gets us a refresh token; the "common" tenant + this scope
 // combination works for both personal Microsoft accounts and work/school ones.
-const SCOPE = 'offline_access Calendars.ReadWrite';
+// Mail.Read was added after the initial calendar-only build — anyone who
+// connected before that needs to disconnect and reconnect to grant it.
+const SCOPE = 'offline_access Calendars.ReadWrite Mail.Read';
 
 function buildAuthorizeUrl() {
   const params = new URLSearchParams({
