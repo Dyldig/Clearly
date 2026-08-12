@@ -29,22 +29,25 @@ export function createInitialState() {
     monthCursor: { y: now.getFullYear(), m: now.getMonth() },
     yearCursor: now.getFullYear(),
     monthSelectedKey: null,
-    calendarProvider: persisted.calendarProvider || 'google',
+    // Whether Outlook is actually connected is a server-side fact (OAuth
+    // tokens live in Supabase), not a local preference — always re-checked
+    // via /api/calendar-status on load rather than persisted here.
+    calendarConnected: false,
+    calendarChecking: true,
     filtersOpen: false,
     filters: persisted.filters || { channels: [], attention: 'all', dateFrom: '', dateTo: '' },
   };
 }
 
 // Message read/added-to-calendar state now lives server-side (see api.js) —
-// only channel mute/priority, filters, and the calendar provider choice are
-// still local-only, so only those persist here.
+// only channel mute/priority and filters are still local-only, so only
+// those persist here.
 export function persistState(state) {
   const channels = {};
   for (const c of state.channels) channels[c.id] = { muted: c.muted, priority: c.priority };
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      calendarProvider: state.calendarProvider,
       filters: state.filters,
       channels,
     }));

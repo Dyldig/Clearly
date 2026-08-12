@@ -61,3 +61,21 @@ select id, coalesce(date_label, 'Event'), event_date, added_to_calendar
 from messages
 where event_date is not null
   and not exists (select 1 from message_events where message_events.message_id = messages.id);
+
+-- The Microsoft Graph event this row was pushed to, so "remove from
+-- calendar" can delete the real event rather than just flipping a flag.
+alter table message_events add column if not exists graph_event_id text;
+
+-- OAuth tokens for a connected calendar. Single-user for now, so user_id is
+-- just a fixed string, not a real account reference.
+create table if not exists calendar_connections (
+  id uuid primary key default gen_random_uuid(),
+  user_id text not null default 'sarah',
+  provider text not null default 'microsoft',
+  access_token text not null,
+  refresh_token text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, provider)
+);

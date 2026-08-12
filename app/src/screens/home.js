@@ -1,6 +1,6 @@
 import { el, svg } from '../dom.js';
 import { mapItem } from '../selectors.js';
-import { PROVIDER_META, chipStyle } from '../colors.js';
+import { CALENDAR_COLOR, chipStyle } from '../colors.js';
 import { parseEventDate } from '../dates.js';
 import { makeSwipeable } from '../swipe.js';
 
@@ -29,7 +29,6 @@ export function renderHome(state, actions) {
     ? allFyiItems.filter(it => matchesFilters(it, filters)).map(i => mapItem(i, actions))
     : [];
 
-  const providerMeta = PROVIDER_META[state.calendarProvider];
   const activeFilterCount = countActiveFilters(filters);
   const emptyMessage = state.items.length === 0
     ? 'No messages yet — forward an email to get started.'
@@ -37,11 +36,14 @@ export function renderHome(state, actions) {
 
   const nodes = [];
 
-  if (providerMeta) {
+  if (state.calendarConnected) {
+    const addedCount = state.items.reduce((sum, it) => sum + (it.events || []).filter(e => e.addedToCalendar).length, 0);
     nodes.push(el('div', { class: 'calendar-banner' }, [
-      el('div', { class: 'calendar-banner-dot', style: { background: providerMeta.color } }),
+      el('div', { class: 'calendar-banner-dot', style: { background: CALENDAR_COLOR } }),
       el('span', { class: 'calendar-banner-text' },
-        `${allActionItems.length} upcoming ${allActionItems.length === 1 ? 'event' : 'events'} synced with your ${providerMeta.label}`),
+        addedCount > 0
+          ? `${addedCount} ${addedCount === 1 ? 'event' : 'events'} synced with your Outlook Calendar`
+          : 'Outlook Calendar connected — add a date from any message to sync it'),
     ]));
   }
 

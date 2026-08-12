@@ -1,5 +1,8 @@
 import { createInitialState, persistState } from './state.js';
-import { fetchMessages, updateMessage, updateEvent, deleteMessage } from './api.js';
+import {
+  fetchMessages, updateMessage, deleteMessage,
+  fetchCalendarStatus, addEventToCalendar, removeEventFromCalendar, disconnectCalendar as disconnectCalendarApi,
+} from './api.js';
 import { el } from './dom.js';
 import { showToast } from './toast.js';
 import { attachPullToRefresh } from './pulltorefresh.js';
@@ -61,16 +64,39 @@ const actions = {
   goSettings: () => update({ activeTab: 'settings', selectedItemId: null }),
   toggleExpandOriginal: () => update(s => ({ expandedOriginal: !s.expandedOriginal })),
   toggleEventCalendar: (eventId) => {
+    if (state.calendarBusyEventId) return; // one in flight at a time
     const message = state.items.find(it => it.id === state.selectedItemId);
     const event = message && message.events.find(e => e.id === eventId);
     if (!event) return;
-    const nextValue = !event.addedToCalendar;
-    update(s => ({
-      items: s.items.map(it => it.id === s.selectedItemId
-        ? { ...it, events: it.events.map(e => e.id === eventId ? { ...e, addedToCalendar: nextValue } : e) }
-        : it),
-    }));
-    updateEvent(eventId, { addedToCalendar: nextValue }).catch(err => console.error('[toggleEventCalendar] sync failed:', err));
+    const adding = !event.addedToCalendar;
+
+    update({ calendarBusyEventId: eventId });
+    const call = adding ? addEventToCalendar(eventId) : removeEventFromCalendar(eventId);
+    call
+      .then(() => {
+        update(s => ({
+          calendarBusyEventId: null,
+          items: s.items.map(it => it.id === message.id
+            ? { ...it, events: it.events.map(e => e.id === eventId ? { ...e, addedToCalendar: adding } : e) }
+            : it),
+        }));
+      })
+      .catch(err => {
+        console.error('[toggleEventCalendar] failed:', err);
+        update({ calendarBusyEventId: null });
+        showToast(adding ? "Couldn't add to calendar — try again" : "Couldn't remove from calendar — try again");
+      });
+  },
+  disconnectCalendar: () => {
+    disconnectCalendarApi()
+      .then(() => {
+        update({ calendarConnected: false });
+        showToast('Calendar disconnected');
+      })
+      .catch(err => {
+        console.error('[disconnectCalendar] failed:', err);
+        showToast("Couldn't disconnect — try again");
+      });
   },
   swipeDeleteItem: (id) => {
     const item = state.items.find(it => it.id === id);
@@ -118,8 +144,6 @@ const actions = {
   selectMonthDay: (key) => update(s => ({ monthSelectedKey: s.monthSelectedKey === key ? null : key })),
   jumpToMonth: (y, m) => update({ activeTab: 'digest', digestView: 'month', monthCursor: { y, m }, monthSelectedKey: null }),
 
-  setCalendarProvider: (v) => update({ calendarProvider: v }),
-
   toggleFilters: () => update(s => ({ filtersOpen: !s.filtersOpen })),
   toggleFilterChannel: (channel) => update(s => {
     const has = s.filters.channels.includes(channel);
@@ -150,12 +174,36 @@ function renderContentBody() {
   return renderDigest(state, actions);
 }
 
+// If we just landed back here from the Microsoft OAuth redirect, surface
+// that and land on Settings — the actual connected/not-connected fact still
+// comes from fetchCalendarStatus() below, this is just the toast + tab.
+function handleOAuthReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const calendarParam = params.get('calendar');
+  if (!calendarParam) return;
+
+  params.delete('calendar');
+  const query = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : '') + window.location.hash);
+
+  update({ activeTab: 'settings' });
+  showToast(calendarParam === 'connected' ? 'Outlook Calendar connected' : "Couldn't connect your calendar — try again");
+}
+
 render();
 attachPullToRefresh(contentEl, refreshMessages);
+handleOAuthReturn();
 
 fetchMessages()
   .then(items => update({ items, itemsLoading: false }))
   .catch(err => {
     console.error('[bootstrap] failed to load messages:', err);
     update({ itemsLoading: false, itemsError: String(err && err.message || err) });
+  });
+
+fetchCalendarStatus()
+  .then(({ connected }) => update({ calendarConnected: connected, calendarChecking: false }))
+  .catch(err => {
+    console.error('[bootstrap] failed to load calendar status:', err);
+    update({ calendarChecking: false });
   });

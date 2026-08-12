@@ -27,10 +27,26 @@ export function updateMessage(id, patch) {
   return apiFetch('/api/messages', { method: 'POST', body: JSON.stringify({ id, ...patch }) });
 }
 
-export function updateEvent(id, patch) {
-  return apiFetch('/api/events', { method: 'POST', body: JSON.stringify({ id, ...patch }) });
-}
-
 export function deleteMessage(id) {
   return apiFetch('/api/messages', { method: 'DELETE', body: JSON.stringify({ id }) });
+}
+
+export function fetchCalendarStatus() {
+  return apiFetch('/api/calendar-status');
+}
+
+export function addEventToCalendar(eventId) {
+  return apiFetch('/api/calendar-add-event', { method: 'POST', body: JSON.stringify({ eventId }) });
+}
+
+export function removeEventFromCalendar(eventId) {
+  return apiFetch('/api/calendar-remove-event', { method: 'POST', body: JSON.stringify({ eventId }) });
+}
+
+export function disconnectCalendar() {
+  return apiFetch('/api/calendar-disconnect', { method: 'POST' });
+}
+
+export function connectCalendarUrl() {
+  return `${API_BASE}/api/auth/microsoft/start`;
 }

@@ -428,6 +428,7 @@ body {
   font: 600 14px/1 'Figtree', sans-serif; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
+.cal-btn-connect { background: oklch(0.93 0.006 60); color: oklch(0.4 0.015 60); }
 
 .original-card {
   background: oklch(0.995 0.004 70); border: 1px solid oklch(0.9 0.01 60);
@@ -552,3 +553,14 @@ body {
   background: oklch(0.93 0.006 60); color: oklch(0.5 0.015 60);
   border-radius: 100px; padding: 3px 8px;
 }
+.settings-connect-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 10px; padding: 10px 16px; border: none; border-radius: 100px;
+  background: var(--accent); color: #fff; font: 600 13px/1 'Figtree', sans-serif;
+  text-decoration: none; cursor: pointer;
+}
+.settings-disconnect-btn {
+  background: transparent; color: oklch(0.5 0.15 25);
+  border: 1.5px solid oklch(0.85 0.02 25);
+}
+.settings-note { margin-top: 10px; font: 400 11.5px/1.4 'Figtree', sans-serif; color: oklch(0.6 0.01 60); }
