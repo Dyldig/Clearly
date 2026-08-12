@@ -75,3 +75,19 @@ export function setChannelSenderMuted(id, muted) {
 export function deleteChannelSender(id) {
   return apiFetch('/api/channel-senders', { method: 'DELETE', body: JSON.stringify({ id }) });
 }
+
+export function fetchProfile() {
+  return apiFetch('/api/profile');
+}
+
+export function saveProfile(displayName) {
+  return apiFetch('/api/profile', { method: 'POST', body: JSON.stringify({ displayName }) });
+}
+
+export function savePushSubscription({ endpoint, keys, notifyActionOnly }) {
+  return apiFetch('/api/push-subscribe', { method: 'POST', body: JSON.stringify({ endpoint, keys, notifyActionOnly }) });
+}
+
+export function removePushSubscription(endpoint) {
+  return apiFetch('/api/push-unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) });
+}

@@ -3,7 +3,9 @@ import {
   fetchMessages, updateMessage, deleteMessage,
   fetchCalendarStatus, addEventToCalendar, removeEventFromCalendar, disconnectCalendar as disconnectCalendarApi,
   fetchChannelSenders, addChannelSender, setChannelSenderMuted, deleteChannelSender as deleteChannelSenderApi,
+  fetchProfile, saveProfile,
 } from './api.js';
+import { isPushSupported, getExistingSubscription, subscribeToPush, unsubscribeFromPush } from './push.js';
 import { el } from './dom.js';
 import { showToast } from './toast.js';
 import { attachPullToRefresh } from './pulltorefresh.js';
@@ -198,6 +200,66 @@ const actions = {
   setFilterDateFrom: (v) => update(s => ({ filters: { ...s.filters, dateFrom: v } })),
   setFilterDateTo: (v) => update(s => ({ filters: { ...s.filters, dateTo: v } })),
   clearFilters: () => update({ filters: { channels: [], attention: 'all', dateFrom: '', dateTo: '' } }),
+
+  enableNotifications: () => {
+    if (state.pushBusy) return;
+    update({ pushBusy: true });
+    subscribeToPush(state.pushNotifyActionOnly)
+      .then(() => {
+        update({ pushBusy: false, pushSubscribed: true });
+        showToast('Notifications enabled');
+      })
+      .catch(err => {
+        console.error('[enableNotifications] failed:', err);
+        update({ pushBusy: false });
+        showToast(err && err.message === 'permission_denied'
+          ? 'Notifications were blocked — check your browser settings'
+          : "Couldn't enable notifications — try again");
+      });
+  },
+  disableNotifications: () => {
+    if (state.pushBusy) return;
+    update({ pushBusy: true });
+    unsubscribeFromPush()
+      .then(() => {
+        update({ pushBusy: false, pushSubscribed: false });
+        showToast('Notifications disabled');
+      })
+      .catch(err => {
+        console.error('[disableNotifications] failed:', err);
+        update({ pushBusy: false });
+        showToast("Couldn't disable notifications — try again");
+      });
+  },
+  togglePushNotifyActionOnly: () => {
+    if (state.pushBusy || !state.pushSubscribed) return;
+    const next = !state.pushNotifyActionOnly;
+    update({ pushBusy: true });
+    subscribeToPush(next)
+      .then(() => update({ pushBusy: false, pushNotifyActionOnly: next }))
+      .catch(err => {
+        console.error('[togglePushNotifyActionOnly] failed:', err);
+        update({ pushBusy: false });
+        showToast("Couldn't update preference — try again");
+      });
+  },
+
+  startEditAccountName: () => update({ accountEditing: true }),
+  cancelEditAccountName: () => update({ accountEditing: false }),
+  saveAccountName: () => {
+    const input = document.getElementById('account-name-input');
+    const name = input ? input.value.trim() : '';
+    if (!name) { showToast('Enter a display name'); return; }
+    saveProfile(name)
+      .then(() => {
+        update({ displayName: name, accountEditing: false });
+        showToast('Name updated');
+      })
+      .catch(err => {
+        console.error('[saveAccountName] failed:', err);
+        showToast(err.message || "Couldn't save — try again");
+      });
+  },
 };
 
 function render() {
@@ -246,7 +308,7 @@ fetchMessages()
   });
 
 fetchCalendarStatus()
-  .then(({ connected }) => update({ calendarConnected: connected, calendarChecking: false }))
+  .then(({ connected, email }) => update({ calendarConnected: connected, calendarEmail: email, calendarChecking: false }))
   .catch(err => {
     console.error('[bootstrap] failed to load calendar status:', err);
     update({ calendarChecking: false });
@@ -258,3 +320,22 @@ fetchChannelSenders()
     console.error('[bootstrap] failed to load channel senders:', err);
     update({ channelSendersLoading: false });
   });
+
+fetchProfile()
+  .then(({ displayName }) => update({ displayName, displayNameLoading: false }))
+  .catch(err => {
+    console.error('[bootstrap] failed to load profile:', err);
+    update({ displayName: 'there', displayNameLoading: false });
+  });
+
+if (isPushSupported()) {
+  update({ pushSupported: true });
+  getExistingSubscription()
+    .then(sub => update({ pushSubscribed: !!sub, pushChecking: false }))
+    .catch(err => {
+      console.error('[bootstrap] failed to check push subscription:', err);
+      update({ pushChecking: false });
+    });
+} else {
+  update({ pushSupported: false, pushChecking: false });
+}

@@ -3,6 +3,7 @@
 // caller is responsible for pulling fromEmail/subject/rawBody/emailDate out
 // of its own source's shape; this owns everything from there on.
 const { randomUUID } = require('crypto');
+const { notifyNewMessage } = require('./_push');
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -159,6 +160,14 @@ async function ingestEmail({ fromEmail, subject, rawBody, providerMessageId, ema
       event_date: ev.date,
     })));
   }
+
+  // Fire-and-forget — a push failure should never fail ingestion.
+  notifyNewMessage({
+    title: extracted.title,
+    summary: extracted.summary,
+    actionRequired: extracted.actionRequired,
+    channel: channelInfo.channel,
+  }).catch(err => console.error('[ingestEmail] notify failed:', err));
 
   return { ok: true, messageId };
 }

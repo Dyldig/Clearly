@@ -1,4 +1,4 @@
-// GET /api/calendar-status -> { connected: boolean }
+// GET /api/calendar-status -> { connected: boolean, email: string|null }
 const { guard, supabase } = require('./_lib');
 
 module.exports = async (req, res) => {
@@ -6,10 +6,10 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') { res.status(405).json({ error: 'method not allowed' }); return; }
 
   try {
-    const resp = await supabase('calendar_connections?user_id=eq.sarah&provider=eq.microsoft&select=id');
+    const resp = await supabase('calendar_connections?user_id=eq.sarah&provider=eq.microsoft&select=id,account_email');
     if (!resp.ok) throw new Error(`Supabase read failed: ${resp.status} ${await resp.text()}`);
     const rows = await resp.json();
-    res.status(200).json({ connected: rows.length > 0 });
+    res.status(200).json({ connected: rows.length > 0, email: rows.length > 0 ? rows[0].account_email : null });
   } catch (err) {
     console.error('[calendar-status] failed:', err);
     res.status(500).json({ error: String(err && err.message || err) });

@@ -19,6 +19,21 @@ module.exports = async (req, res) => {
     const tokens = await exchangeCodeForTokens(code);
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
+    // Best-effort — shown read-only in Settings so it's clear which inbox is
+    // synced. Not worth failing the whole connect flow if this one call trips.
+    let accountEmail = null;
+    try {
+      const meResp = await fetch('https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName', {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      if (meResp.ok) {
+        const me = await meResp.json();
+        accountEmail = me.mail || me.userPrincipalName || null;
+      }
+    } catch (err) {
+      console.error('[auth/microsoft/callback] /me lookup failed:', err);
+    }
+
     const resp = await fetch(`${SUPABASE_URL}/rest/v1/calendar_connections?on_conflict=user_id,provider`, {
       method: 'POST',
       headers: {
@@ -33,6 +48,7 @@ module.exports = async (req, res) => {
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         expires_at: expiresAt,
+        account_email: accountEmail,
         updated_at: new Date().toISOString(),
       }),
     });

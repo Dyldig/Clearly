@@ -36,6 +36,17 @@ export function createInitialState() {
     // via /api/calendar-status on load rather than persisted here.
     calendarConnected: false,
     calendarChecking: true,
+    calendarEmail: null,
+    displayName: '',
+    displayNameLoading: true,
+    accountEditing: false,
+    // Push subscription state is read from the browser's own service-worker
+    // registration on boot (see app.js), not persisted here.
+    pushSupported: false,
+    pushChecking: true,
+    pushSubscribed: false,
+    pushNotifyActionOnly: false,
+    pushBusy: false,
     filtersOpen: false,
     filters: persisted.filters || { channels: [], attention: 'all', dateFrom: '', dateTo: '' },
   };

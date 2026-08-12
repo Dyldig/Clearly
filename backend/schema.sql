@@ -82,3 +82,31 @@ create table if not exists calendar_connections (
 
 -- Pausing a sender (without deleting its config) skips it during mail-sync.
 alter table channel_senders add column if not exists muted boolean not null default false;
+
+-- The Outlook account's own email, fetched from Graph /me at connect time —
+-- shown read-only in Settings so it's clear which inbox is synced.
+alter table calendar_connections add column if not exists account_email text;
+
+-- Single-user profile info that isn't tied to any particular OAuth
+-- connection. One row, user_id fixed like everywhere else in this schema.
+create table if not exists profiles (
+  user_id text primary key default 'sarah',
+  display_name text not null default 'Sarah',
+  updated_at timestamptz not null default now()
+);
+
+insert into profiles (user_id, display_name) values ('sarah', 'Sarah')
+on conflict (user_id) do nothing;
+
+-- A browser's Web Push subscription. One row per device/browser that has
+-- granted notification permission — endpoint is the unique key Web Push
+-- itself hands out, so re-subscribing the same device just updates in place.
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id text not null default 'sarah',
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  notify_action_only boolean not null default false,
+  created_at timestamptz not null default now()
+);

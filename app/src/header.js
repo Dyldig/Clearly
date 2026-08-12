@@ -15,7 +15,7 @@ const DIGEST_VIEWS = [
 
 export function renderHeader(state, actions) {
   if (state.selectedItemId) return renderDetailHeader(state, actions);
-  if (state.activeTab === 'home') return renderHomeHeader();
+  if (state.activeTab === 'home') return renderHomeHeader(state);
   if (state.activeTab === 'digest') return renderDigestHeader(state, actions);
   if (state.activeTab === 'settings') return renderSettingsHeader();
   return renderChannelsHeader();
@@ -30,9 +30,10 @@ function renderDetailHeader(state, actions) {
   ]);
 }
 
-function renderHomeHeader() {
+function renderHomeHeader(state) {
   const now = new Date();
   const todayLabel = `${WEEKDAY_ABBR[now.getDay()]}, ${now.getDate()} ${MONTH_NAMES[now.getMonth()].slice(0, 3)}`;
+  const name = state.displayName || 'there';
   return el('div', { class: 'header header-home' }, [
     el('div', { class: 'brand-row' }, [
       el('div', { class: 'brand-left' }, [
@@ -41,7 +42,7 @@ function renderHomeHeader() {
       ]),
       el('span', { class: 'header-date' }, todayLabel),
     ]),
-    el('h1', { class: 'home-greeting' }, 'Good morning, Sarah'),
+    el('h1', { class: 'home-greeting' }, `Good morning, ${name}`),
     el('p', { class: 'home-tagline' }, "Everything that matters. Nothing that doesn't."),
   ]);
 }

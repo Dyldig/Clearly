@@ -1,5 +1,8 @@
 {
   "name": "clearly-backend",
   "private": true,
-  "engines": { "node": ">=18" }
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
 }
