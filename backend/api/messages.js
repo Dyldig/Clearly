@@ -1,7 +1,13 @@
 // GET    /api/messages       -> list all messages (with their events), shaped for the frontend
 // POST   /api/messages {id, read?} -> patch one message's read state
+// POST   /api/messages {id, ignoreSimilar: true} -> saves a "don't show me
+//        this again" rule for this channel+title, and deletes this message
 // DELETE /api/messages {id}  -> delete one message (cascades to its events)
 const { guard, supabase } = require('./_lib');
+
+function normalizeTitle(title) {
+  return (title || '').trim().toLowerCase();
+}
 
 module.exports = async (req, res) => {
   if (!guard(req, res)) return;
@@ -10,7 +16,7 @@ module.exports = async (req, res) => {
     if (req.method === 'GET') {
       const resp = await supabase(
         'messages?select=id,channel,hue,title,summary,raw_body,action_required,read,created_at,' +
-        'message_events(id,label,event_date,added_to_calendar)&order=created_at.desc'
+        'message_events(id,label,event_date,event_time,added_to_calendar)&order=created_at.desc'
       );
       if (!resp.ok) throw new Error(`Supabase read failed: ${resp.status} ${await resp.text()}`);
       const rows = await resp.json();
@@ -19,8 +25,31 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-      const { id, read } = req.body || {};
+      const { id, read, ignoreSimilar } = req.body || {};
       if (!id) { res.status(400).json({ error: 'id required' }); return; }
+
+      if (ignoreSimilar) {
+        const msgResp = await supabase(`messages?id=eq.${encodeURIComponent(id)}&select=channel,title`);
+        if (!msgResp.ok) throw new Error(`Supabase read failed: ${msgResp.status} ${await msgResp.text()}`);
+        const [msg] = await msgResp.json();
+        if (!msg) { res.status(404).json({ error: 'message not found' }); return; }
+
+        const patternResp = await supabase('ignored_patterns?on_conflict=channel,pattern', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
+          body: JSON.stringify({ channel: msg.channel, pattern: normalizeTitle(msg.title) }),
+        });
+        if (!patternResp.ok) throw new Error(`Supabase insert failed: ${patternResp.status} ${await patternResp.text()}`);
+
+        const delResp = await supabase(`messages?id=eq.${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: { Prefer: 'return=minimal' },
+        });
+        if (!delResp.ok) throw new Error(`Supabase delete failed: ${delResp.status} ${await delResp.text()}`);
+        res.status(200).json({ ok: true });
+        return;
+      }
+
       if (typeof read !== 'boolean') { res.status(400).json({ error: 'nothing to update' }); return; }
 
       const resp = await supabase(`messages?id=eq.${encodeURIComponent(id)}`, {
@@ -55,7 +84,7 @@ module.exports = async (req, res) => {
 
 function toItem(row) {
   const events = (row.message_events || [])
-    .map(e => ({ id: e.id, label: e.label, date: e.event_date, addedToCalendar: e.added_to_calendar }))
+    .map(e => ({ id: e.id, label: e.label, date: e.event_date, time: e.event_time ? e.event_time.slice(0, 5) : null, addedToCalendar: e.added_to_calendar }))
     .sort((a, b) => new Date(a.date) - new Date(b.date));
   return {
     id: row.id,

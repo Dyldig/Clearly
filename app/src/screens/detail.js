@@ -1,6 +1,6 @@
 import { el, svg } from '../dom.js';
 import { chipStyle } from '../colors.js';
-import { formatEventDate } from '../dates.js';
+import { formatEventDateTime } from '../dates.js';
 
 const CAL_ICON = `<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="13.5" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 8H17.5" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 2V5.5M13.5 2V5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
 
@@ -33,6 +33,10 @@ export function renderDetail(state, actions) {
         class: state.expandedOriginal ? 'original-text-expanded' : 'original-text-collapsed',
       }, it.original),
     ]),
+    el('div', {
+      class: 'ignore-similar-link',
+      onClick: () => actions.ignoreSimilarMessage(it.id),
+    }, `Don't show me ${it.channel} messages like this again`),
   ]);
 }
 
@@ -44,7 +48,7 @@ function renderEventBlock(event, state, actions) {
     return el('div', { class: 'action-event' }, [
       el('div', { class: 'action-event-heading' }, [
         el('span', { class: 'action-event-label' }, event.label),
-        el('span', { class: 'action-event-date' }, formatEventDate(event.date)),
+        el('span', { class: 'action-event-date' }, formatEventDateTime(event.date, event.time)),
       ]),
       el('button', {
         class: 'cal-btn cal-btn-connect',
@@ -63,7 +67,7 @@ function renderEventBlock(event, state, actions) {
   return el('div', { class: 'action-event' }, [
     el('div', { class: 'action-event-heading' }, [
       el('span', { class: 'action-event-label' }, event.label),
-      el('span', { class: 'action-event-date' }, formatEventDate(event.date)),
+      el('span', { class: 'action-event-date' }, formatEventDateTime(event.date, event.time)),
     ]),
     el('button', {
       class: 'cal-btn',

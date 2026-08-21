@@ -6,6 +6,7 @@
 // function count limit — was calendar-add-event.js + calendar-remove-event.js.
 const { guard, supabase } = require('./_lib');
 const { getValidAccessToken } = require('./_microsoft');
+const { createGraphEvent } = require('./_calendar');
 
 module.exports = async (req, res) => {
   if (!guard(req, res)) return;
@@ -15,36 +16,23 @@ module.exports = async (req, res) => {
       const { eventId } = req.body || {};
       if (!eventId) { res.status(400).json({ error: 'eventId required' }); return; }
 
-      const evResp = await supabase(`message_events?id=eq.${encodeURIComponent(eventId)}&select=id,label,event_date`);
+      const evResp = await supabase(`message_events?id=eq.${encodeURIComponent(eventId)}&select=id,label,event_date,event_time`);
       if (!evResp.ok) throw new Error(`Supabase read failed: ${evResp.status} ${await evResp.text()}`);
       const [event] = await evResp.json();
       if (!event) { res.status(404).json({ error: 'event not found' }); return; }
 
-      let accessToken;
+      let graphEventId;
       try {
-        accessToken = await getValidAccessToken(supabase);
+        graphEventId = await createGraphEvent(supabase, event);
       } catch (err) {
         if (err.message === 'not_connected') { res.status(409).json({ error: 'calendar_not_connected' }); return; }
         throw err;
       }
 
-      const graphResp = await fetch('https://graph.microsoft.com/v1.0/me/events', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          subject: event.label,
-          isAllDay: true,
-          start: { dateTime: `${event.event_date}T00:00:00`, timeZone: 'UTC' },
-          end: { dateTime: `${addOneDay(event.event_date)}T00:00:00`, timeZone: 'UTC' },
-        }),
-      });
-      if (!graphResp.ok) throw new Error(`Graph create event failed: ${graphResp.status} ${await graphResp.text()}`);
-      const created = await graphResp.json();
-
       const patchResp = await supabase(`message_events?id=eq.${encodeURIComponent(eventId)}`, {
         method: 'PATCH',
         headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ added_to_calendar: true, graph_event_id: created.id }),
+        body: JSON.stringify({ added_to_calendar: true, graph_event_id: graphEventId }),
       });
       if (!patchResp.ok) throw new Error(`Supabase update failed: ${patchResp.status} ${await patchResp.text()}`);
 
@@ -89,9 +77,3 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: String(err && err.message || err) });
   }
 };
-
-function addOneDay(dateStr) {
-  const d = new Date(`${dateStr}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
-}

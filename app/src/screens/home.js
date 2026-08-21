@@ -6,6 +6,7 @@ import { makeSwipeable } from '../swipe.js';
 
 const FILTER_ICON = `<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M6 10h8M9 14.5h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;
 const TRASH_ICON = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M7.5 5.5V4a1.5 1.5 0 011.5-1.5h2A1.5 1.5 0 0112.5 4v1.5M8 9v6M12 9v6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 5.5l.7 10a2 2 0 002 1.9h5.6a2 2 0 002-1.9l.7-10" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const CHECK_ICON = `<svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M3.5 10.5l4 4 9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 const ATTENTION_OPTIONS = [
   { key: 'all', label: 'All' },
@@ -15,9 +16,13 @@ const ATTENTION_OPTIONS = [
 
 export function renderHome(state, actions) {
   const { filters } = state;
-  // state.items already arrives newest-first from the backend.
-  const allActionItems = state.items.filter(i => i.actionRequired);
-  const allFyiItems = state.items.filter(i => !i.actionRequired);
+  // state.items already arrives newest-first from the backend. Marking a
+  // message read (via the checkmark button, or by opening it) is how you
+  // dismiss it from Home without deleting it — it still exists everywhere
+  // else (Digest, the calendar), just not cluttering this list.
+  const unreadItems = state.items.filter(i => !i.read);
+  const allActionItems = unreadItems.filter(i => i.actionRequired);
+  const allFyiItems = unreadItems.filter(i => !i.actionRequired);
 
   const showActionSection = filters.attention !== 'fyi';
   const showFyiSection = filters.attention !== 'action';
@@ -30,8 +35,8 @@ export function renderHome(state, actions) {
     : [];
 
   const activeFilterCount = countActiveFilters(filters);
-  const emptyMessage = state.items.length === 0
-    ? 'No messages yet — forward an email to get started.'
+  const emptyMessage = unreadItems.length === 0
+    ? (state.items.length === 0 ? 'No messages yet — forward an email to get started.' : "You're all caught up.")
     : 'Nothing matches these filters.';
 
   const nodes = [];
@@ -192,7 +197,14 @@ function renderHomeRow(it, kind, actions) {
         }),
         el('span', { class: `chip chip-${kind}`, style: { color: it.chipColor, background: it.chipBg } }, it.channel),
       ]),
-      isAction ? el('span', { class: 'home-row-date' }, it.dateLabel) : null,
+      el('div', { class: 'home-row-right' }, [
+        isAction ? el('span', { class: 'home-row-date' }, it.dateLabel) : null,
+        el('div', {
+          class: 'mark-read-btn',
+          title: 'Mark as read',
+          onClick: (e) => { e.stopPropagation(); actions.markRead(it.id); },
+        }, svg(CHECK_ICON)),
+      ]),
     ]),
     el('div', { class: `home-row-title home-row-title-${kind}`, style: { fontWeight: it.titleWeight } }, it.title),
   ]);

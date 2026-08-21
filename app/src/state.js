@@ -40,6 +40,8 @@ export function createInitialState() {
     displayName: '',
     displayNameLoading: true,
     accountEditing: false,
+    autoAddCalendar: false,
+    autoAddCalendarBusy: false,
     // Push subscription state is read from the browser's own service-worker
     // registration on boot (see app.js), not persisted here.
     pushSupported: false,

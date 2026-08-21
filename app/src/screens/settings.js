@@ -31,6 +31,17 @@ function renderCalendarCard(state, actions) {
       : el('a', { class: 'settings-connect-btn', href: connectCalendarUrl() }, 'Connect Outlook Calendar');
   }
 
+  const autoAddRow = state.calendarConnected
+    ? el('div', { class: 'channel-bottom' }, [
+        el('span', { class: 'channel-mute-status' }, 'Auto-add new events'),
+        el('div', {
+          class: 'mute-switch',
+          style: { background: state.autoAddCalendar ? 'oklch(0.62 0.15 35)' : 'oklch(0.85 0.01 60)' },
+          onClick: state.autoAddCalendarBusy ? null : actions.toggleAutoAddCalendar,
+        }, el('div', { class: 'mute-knob', style: { left: state.autoAddCalendar ? '21px' : '3px' } })),
+      ])
+    : null;
+
   return el('div', { class: 'channel-card' }, [
     el('div', { class: 'channel-top' }, [
       el('div', { class: 'channel-badge calendar-sync-badge' }, svg(CAL_ICON)),
@@ -40,6 +51,7 @@ function renderCalendarCard(state, actions) {
       ]),
     ]),
     action,
+    autoAddRow,
     el('div', { class: 'settings-note' }, 'Google Calendar support is coming later.'),
   ]);
 }

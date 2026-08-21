@@ -110,3 +110,25 @@ create table if not exists push_subscriptions (
   notify_action_only boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+-- A specific clock time for an event, when the source email mentions one
+-- (e.g. "assembly at 9am"). Null means the event is a whole-day thing, and
+-- calendar events are created all-day rather than at a made-up time.
+alter table message_events add column if not exists event_time time;
+
+-- When on, newly ingested events are pushed straight to the connected
+-- calendar without the user having to tap "Add to Outlook Calendar" first.
+alter table profiles add column if not exists auto_add_calendar boolean not null default false;
+
+-- A user-defined "don't show me this again" rule: any future message on the
+-- same channel whose title matches gets skipped entirely at ingest time,
+-- rather than reappearing every time (e.g. a weekly "statement is ready"
+-- email). Matching is a simple case-insensitive containment check done in
+-- application code, not SQL, so no index is needed beyond the uniqueness one.
+create table if not exists ignored_patterns (
+  id uuid primary key default gen_random_uuid(),
+  channel text not null,
+  pattern text not null,
+  created_at timestamptz not null default now(),
+  unique (channel, pattern)
+);

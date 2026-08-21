@@ -4,6 +4,8 @@
 // of its own source's shape; this owns everything from there on.
 const { randomUUID } = require('crypto');
 const { notifyNewMessage } = require('./_push');
+const { supabase: supabaseFetch } = require('./_lib');
+const { createGraphEvent } = require('./_calendar');
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -17,7 +19,14 @@ const EXTRACT_TOOL = {
     properties: {
       title: { type: 'string', description: 'Short title, under 8 words.' },
       summary: { type: 'string', description: 'One or two plain sentences addressed to the parent.' },
-      actionRequired: { type: 'boolean', description: 'True if the parent needs to do something, attend something, or pay for something.' },
+      actionRequired: {
+        type: 'boolean',
+        description: 'True only if the PARENT personally needs to do something specific: reply, pay, sign/return a form, send an item, book a slot, or physically attend/drop off/pick up something on a particular day. ' +
+          'False for pure information, even if it describes an event — a newsletter mentioning "assembly is on Friday" is awareness (false) unless parents are asked to attend, bring something, or RSVP. ' +
+          'False for routine automated notices with nothing to do right now (e.g. "your statement is ready to view", a payment that already went through, a newsletter recap). ' +
+          'Examples of TRUE: "return the permission slip by Friday", "pay the excursion fee", "sign up for a parent-teacher slot", "your child needs a costume for Book Week". ' +
+          'Examples of FALSE: "here\'s what happened in class this week", "the canteen menu has changed", "your statement is ready", "assembly is 9am Friday" (no ask of the parent).',
+      },
       events: {
         type: 'array',
         description: 'Every distinct date, deadline, or event mentioned — each gets its own entry. A single email can list several unrelated ones (e.g. a Seesaw digest mentioning Book Week, a disco, and an excursion all in one message) — split those into separate entries rather than merging them. Empty array if the message has no specific date anywhere.',
@@ -26,6 +35,7 @@ const EXTRACT_TOOL = {
           properties: {
             label: { type: 'string', description: 'Short label for this specific event/deadline, e.g. "Book Week costume", "Disco", "Bunnings visit". A few words, not a full sentence.' },
             date: { type: 'string', description: 'The actual calendar date this refers to, as YYYY-MM-DD, resolved relative to the email\'s own date (given below) — NOT relative to today.' },
+            time: { type: 'string', description: 'A specific clock time this event starts at, as 24-hour HH:MM (e.g. "09:00", "14:30") — ONLY if the email states one (e.g. "assembly at 9am"). Omit this field entirely if no specific time is mentioned; do not guess one.' },
           },
           required: ['label', 'date'],
         },
@@ -113,12 +123,58 @@ async function supabaseInsertEvents(rows) {
       apikey: SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       'content-type': 'application/json',
-      Prefer: 'return=minimal',
+      // return=representation so auto-add-to-calendar (below) has the
+      // inserted ids to work with, without a second round-trip.
+      Prefer: 'return=representation',
     },
     body: JSON.stringify(rows),
   });
   if (!resp.ok) {
     throw new Error(`Supabase events insert failed: ${resp.status} ${await resp.text()}`);
+  }
+  return resp.json();
+}
+
+function normalizeTitle(title) {
+  return (title || '').trim().toLowerCase();
+}
+
+// A simple case-insensitive containment check both ways, so minor wording
+// drift ("Your statement is ready" vs "Your statement is now ready") still
+// matches a saved "ignore this" rule.
+async function matchesIgnoredPattern(channel, title) {
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/ignored_patterns?channel=eq.${encodeURIComponent(channel)}&select=pattern`, {
+    headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+  });
+  if (!resp.ok) return false;
+  const rows = await resp.json();
+  const normalized = normalizeTitle(title);
+  return rows.some(r => normalized.includes(r.pattern) || r.pattern.includes(normalized));
+}
+
+// Fire-and-forget — a calendar failure should never fail ingestion. Only
+// runs when the user has turned on "auto-add to calendar" in Settings.
+async function autoAddEventsToCalendar(events) {
+  try {
+    const profResp = await supabaseFetch('profiles?user_id=eq.sarah&select=auto_add_calendar');
+    if (!profResp.ok) return;
+    const [profile] = await profResp.json();
+    if (!profile || !profile.auto_add_calendar) return;
+
+    for (const ev of events) {
+      try {
+        const graphEventId = await createGraphEvent(supabaseFetch, ev);
+        await supabaseFetch(`message_events?id=eq.${ev.id}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ added_to_calendar: true, graph_event_id: graphEventId }),
+        });
+      } catch (err) {
+        if (err.message !== 'not_connected') console.error('[autoAddEventsToCalendar] event failed:', ev.id, err.message);
+      }
+    }
+  } catch (err) {
+    console.error('[autoAddEventsToCalendar] failed:', err);
   }
 }
 
@@ -131,6 +187,11 @@ async function ingestEmail({ fromEmail, subject, rawBody, providerMessageId, ema
 
   const extracted = await extractWithClaude(subject || '', cleanBody, emailDate);
   const channelInfo = await matchChannel(fromEmail, extracted.senderLabel);
+
+  if (await matchesIgnoredPattern(channelInfo.channel, extracted.title)) {
+    return { skipped: 'ignored pattern' };
+  }
+
   const messageId = randomUUID();
 
   const inserted = await supabaseInsertMessage({
@@ -154,11 +215,13 @@ async function ingestEmail({ fromEmail, subject, rawBody, providerMessageId, ema
   }
 
   if (Array.isArray(extracted.events) && extracted.events.length > 0) {
-    await supabaseInsertEvents(extracted.events.map(ev => ({
+    const insertedEvents = await supabaseInsertEvents(extracted.events.map(ev => ({
       message_id: messageId,
       label: ev.label,
       event_date: ev.date,
+      event_time: ev.time || null,
     })));
+    autoAddEventsToCalendar(insertedEvents).catch(err => console.error('[ingestEmail] auto-add failed:', err));
   }
 
   // Fire-and-forget — a push failure should never fail ingestion.

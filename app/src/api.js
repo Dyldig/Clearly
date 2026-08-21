@@ -40,6 +40,10 @@ export function deleteMessage(id) {
   return apiFetch('/api/messages', { method: 'DELETE', body: JSON.stringify({ id }) });
 }
 
+export function ignoreSimilarMessage(id) {
+  return apiFetch('/api/messages', { method: 'POST', body: JSON.stringify({ id, ignoreSimilar: true }) });
+}
+
 export function fetchCalendarStatus() {
   return apiFetch('/api/calendar-status');
 }
@@ -80,8 +84,8 @@ export function fetchProfile() {
   return apiFetch('/api/profile');
 }
 
-export function saveProfile(displayName) {
-  return apiFetch('/api/profile', { method: 'POST', body: JSON.stringify({ displayName }) });
+export function saveProfile(patch) {
+  return apiFetch('/api/profile', { method: 'POST', body: JSON.stringify(patch) });
 }
 
 export function savePushSubscription({ endpoint, keys, notifyActionOnly }) {

@@ -1,6 +1,6 @@
 import { createInitialState, persistState } from './state.js';
 import {
-  fetchMessages, updateMessage, deleteMessage,
+  fetchMessages, updateMessage, deleteMessage, ignoreSimilarMessage as ignoreSimilarMessageApi,
   fetchCalendarStatus, addEventToCalendar, removeEventFromCalendar, disconnectCalendar as disconnectCalendarApi,
   fetchChannelSenders, addChannelSender, setChannelSenderMuted, deleteChannelSender as deleteChannelSenderApi,
   fetchProfile, saveProfile,
@@ -33,16 +33,15 @@ function update(patch) {
   render();
 }
 
-// Fetches the latest messages and drops anything already read — pulling to
-// refresh both syncs new mail in and clears out what you've already dealt
-// with, rather than just re-fetching the same list.
+// Fetches the latest messages. Read items stay in state (Home just hides
+// them — see renderHome) rather than being dropped here, so a refresh never
+// silently loses something you might still want to find in Digest.
 function refreshMessages() {
   const previousIds = new Set(state.items.map(it => it.id));
   return fetchMessages()
     .then(items => {
-      const visible = items.filter(it => !it.read);
-      const newCount = visible.filter(it => !previousIds.has(it.id)).length;
-      update({ items: visible });
+      const newCount = items.filter(it => !previousIds.has(it.id)).length;
+      update({ items });
       showToast(newCount > 0 ? `${newCount} new ${newCount === 1 ? 'message' : 'messages'}` : 'No new messages');
     })
     .catch(err => {
@@ -61,6 +60,10 @@ const actions = {
     updateMessage(id, { read: true }).catch(err => console.error('[openItem] sync failed:', err));
   },
   closeItem: () => update({ selectedItemId: null }),
+  markRead: (id) => {
+    update(s => ({ items: s.items.map(it => it.id === id ? { ...it, read: true } : it) }));
+    updateMessage(id, { read: true }).catch(err => console.error('[markRead] sync failed:', err));
+  },
   goHome: () => update({ activeTab: 'home', selectedItemId: null }),
   goDigest: () => update({ activeTab: 'digest', selectedItemId: null }),
   goChannels: () => update({ activeTab: 'channels', selectedItemId: null }),
@@ -250,7 +253,7 @@ const actions = {
     const input = document.getElementById('account-name-input');
     const name = input ? input.value.trim() : '';
     if (!name) { showToast('Enter a display name'); return; }
-    saveProfile(name)
+    saveProfile({ displayName: name })
       .then(() => {
         update({ displayName: name, accountEditing: false });
         showToast('Name updated');
@@ -258,6 +261,31 @@ const actions = {
       .catch(err => {
         console.error('[saveAccountName] failed:', err);
         showToast(err.message || "Couldn't save — try again");
+      });
+  },
+  toggleAutoAddCalendar: () => {
+    if (state.autoAddCalendarBusy) return;
+    const next = !state.autoAddCalendar;
+    update({ autoAddCalendarBusy: true });
+    saveProfile({ autoAddCalendar: next })
+      .then(() => update({ autoAddCalendarBusy: false, autoAddCalendar: next }))
+      .catch(err => {
+        console.error('[toggleAutoAddCalendar] failed:', err);
+        update({ autoAddCalendarBusy: false });
+        showToast("Couldn't update — try again");
+      });
+  },
+
+  ignoreSimilarMessage: (id) => {
+    const item = state.items.find(it => it.id === id);
+    if (!item) return;
+    update(s => ({ selectedItemId: null, items: s.items.filter(it => it.id !== id) }));
+    ignoreSimilarMessageApi(id)
+      .then(() => showToast(`Won't show ${item.channel} messages like this again`))
+      .catch(err => {
+        console.error('[ignoreSimilarMessage] failed:', err);
+        update(s => ({ items: [item, ...s.items] }));
+        showToast("Couldn't save that — try again");
       });
   },
 };
@@ -322,7 +350,7 @@ fetchChannelSenders()
   });
 
 fetchProfile()
-  .then(({ displayName }) => update({ displayName, displayNameLoading: false }))
+  .then(({ displayName, autoAddCalendar }) => update({ displayName, autoAddCalendar, displayNameLoading: false }))
   .catch(err => {
     console.error('[bootstrap] failed to load profile:', err);
     update({ displayName: 'there', displayNameLoading: false });

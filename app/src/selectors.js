@@ -1,5 +1,5 @@
 import { chipStyle } from './colors.js';
-import { formatEventDate } from './dates.js';
+import { formatEventDate, formatEventDateTime } from './dates.js';
 
 function readVisuals(read) {
   return {
@@ -44,7 +44,7 @@ export function mapOccurrence(occurrence, actions) {
     id: event.id,
     channel: message.channel,
     title: event.label,
-    dateLabel: formatEventDate(event.date),
+    dateLabel: formatEventDateTime(event.date, event.time),
     chipBg, chipColor,
     ...readVisuals(message.read),
     open: () => actions.openItem(message.id),
