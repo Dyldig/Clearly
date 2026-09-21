@@ -1,11 +1,15 @@
 name: Mail sync
 
 on:
-  schedule:
-    # GitHub's minimum granularity is every 5 minutes, and schedules can
-    # drift a little under load — this isn't a hard real-time guarantee,
-    # just "check every so often."
-    - cron: '*/10 * * * *'
+  # Scheduled polling is paused for now — failing runs were spamming
+  # GitHub's failure-notification emails. Re-enable by uncommenting the
+  # `schedule:` block below. workflow_dispatch still works for a manual run
+  # from the Actions tab in the meantime.
+  # schedule:
+  #   # GitHub's minimum granularity is every 5 minutes, and schedules can
+  #   # drift a little under load — this isn't a hard real-time guarantee,
+  #   # just "check every so often."
+  #   - cron: '*/10 * * * *'
   workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
 
 jobs:
